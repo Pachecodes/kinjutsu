@@ -1,6 +1,67 @@
-# Pachecodes : Kinjutsu
+<p align="center">
+  <img src="docs/assets/kinjutsu-hero.png" alt="Pachecodes : Kinjutsu — Character Swap HD local en tu RTX 4090" width="100%" />
+</p>
 
-**Character Swap HD en tu RTX4090. Una carpeta, doble clic, instalación local sin agente.**
+<h1 align="center">Pachecodes : Kinjutsu</h1>
+
+<p align="center">
+  <strong>Character Swap HD en tu RTX 4090. Una carpeta, doble clic, instalación local sin agente.</strong><br/>
+  Estudio creativo para MiniMax H3 con recetas probadas, guía alineada, modelos verificados por SHA256 y prompts sin IA.
+</p>
+
+<p align="center">
+  <img alt="Windows 11" src="https://img.shields.io/badge/Windows-11-0b0c0d?style=flat-square&labelColor=1c1d20" />
+  <img alt="NVIDIA RTX 4090" src="https://img.shields.io/badge/NVIDIA-RTX%204090-bef264?style=flat-square&labelColor=1c1d20" />
+  <img alt="100% local" src="https://img.shields.io/badge/100%25-local-bef264?style=flat-square&labelColor=1c1d20" />
+  <img alt="Sin API keys" src="https://img.shields.io/badge/sin-API%20keys-0b0c0d?style=flat-square&labelColor=1c1d20" />
+  <img alt="Modelo MiniMax H3" src="https://img.shields.io/badge/modelo-MiniMax%20H3-0b0c0d?style=flat-square&labelColor=1c1d20" />
+</p>
+
+<p align="center">
+  <a href="#lo-más-fácil">Empezar</a> ·
+  <a href="#qué-necesitas">Requisitos</a> ·
+  <a href="#la-receta">La receta</a> ·
+  <a href="#el-estudio">El estudio</a> ·
+  <a href="#licencias-y-límites">Licencias</a>
+</p>
+
+---
+
+## ✦ Qué hace
+
+| | |
+|---|---|
+| 🎭 **Character Swap HD Turbo8** | Cambia la persona de un vídeo guía por la identidad de un retrato, con la receta aprobada y el prompt editable. |
+| 🎞️ **Guía alineada a 24 fps** | Prepara la guía con CPU al tamaño y los frames exactos de la salida; explica salida vs. guía vs. cobertura real del original. |
+| ✍️ **Prompts sin IA** | Plantillas deterministas (Character Swap, Motion y los modos base): ordenan lo que escribes, sin agentes ni tokens. |
+| 📦 **Modelos verificados** | Instala solo lo que falta, tras aceptar licencias; reutiliza pesos existentes por SHA256 sin copiarlos. |
+| 🖥️ **Instalación y motor** | Busca instalaciones de ComfyUI, separa «Iniciar motor» de «Abrir ComfyUI» y abre carpetas en el equipo. Solo local. |
+| 🧭 **Guía interactiva** | Recorrido opcional por todo el flujo, con ayudas en cada control y diseño para escritorio y móvil. |
+
+## El estudio
+
+<table>
+  <tr>
+    <td width="62%"><img src="docs/assets/studio-character-swap.png" alt="Compositor con la receta Character Swap HD Turbo8, retrato y guía alineada" /></td>
+    <td width="38%"><img src="docs/assets/studio-mobile.png" alt="Studio en móvil" /></td>
+  </tr>
+  <tr>
+    <td><sub><b>Ruta Character Swap.</b> Pasos de la receta, huecos Identidad y Vídeo guía, sincronía de la guía y prompt editable.</sub></td>
+    <td><sub><b>Móvil.</b> Crear, Escenario, Refs y Galería.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/studio-workstation.png" alt="Panel Instalación, ComfyUI y Carpetas" /></td>
+    <td><img src="docs/assets/studio-models.png" alt="Panel de modelos verificados" /></td>
+  </tr>
+  <tr>
+    <td><sub><b>Instalación · ComfyUI · Carpetas.</b> Estado real del motor, instalaciones detectadas vs. aprobadas.</sub></td>
+    <td><sub><b>Modelos.</b> Verificados, reutilizados, faltantes y descargas con licencia.</sub></td>
+  </tr>
+</table>
+
+<sub>Capturas con datos de demostración: no contienen personas, rutas ni archivos reales.</sub>
+
+## Antes de empezar
 
 Incluye Studio sanitizado, manifiestos de los dos LoRA, workflows y scripts. No necesita Claude, Hermes, suscripciones ni claves API; Director/chat está desactivado por defecto.
 
@@ -17,7 +78,7 @@ Logs y errores: `runtime/logs/launcher.log`, `comfy.log`, `studio.log`. Un puert
 
 Antes de instalar puede autorizar modelos existentes mediante `runtime/model-roots.json`: `{"roots":["X:/Models/ComfyUI/models"]}`. Solo nombres/targets exactos y tamaño+SHA256 completo, sin escaneo de disco, copias ni inferir integridad por tamaño. Se genera `runtime/extra_model_paths.yaml`. No se importa automáticamente YAML de otra instalación. No distribuya raíces privadas.
 
-**42,470,585,471 bytes** base si faltan todos, más herramientas/dependencias. Recibos reales: `runtime/download-receipts/`. Descargas reanudables a `.part`; se promueven solo con tamaño+SHA256. Nunca se sobrescribe un final incorrecto: inspección manual. API y panel de catálogo/instalar/progreso/cancelar conectados; contrato en `docs/MODEL-MANAGER-API.md`. Los campos adicionales de espacio libre/parciales y el texto de licencia HTTP ya existen en backend, pero el panel todavía usa su presentación compatible inicial. La instalación inicial sigue descargando la base tras consentimiento; no existe aún un modo de instalación liviana que abra Studio sin modelos.
+**42,470,585,471 bytes** base si faltan todos, más herramientas/dependencias. Recibos reales: `runtime/download-receipts/`. Descargas reanudables a `.part`; se promueven solo con tamaño+SHA256. Nunca se sobrescribe un final incorrecto: inspección manual. API y panel de catálogo/instalar/progreso/cancelar conectados; contrato en `docs/MODEL-MANAGER-API.md`. El panel muestra espacio libre en disco (no VRAM), descargas parciales reanudables y el texto de cada licencia antes de aceptar. La instalación inicial sigue descargando la base tras consentimiento; no existe aún un modo de instalación liviana que abra Studio sin modelos.
 
 ## Qué necesitas
 
@@ -77,7 +138,7 @@ No se instala autoarranque ni se publican servicios. Si un puerto ya está ocupa
 
 ## Comfy existente y carpetas
 
-El backend incluye búsqueda acotada de instalaciones, selección autorizada, inicio/apertura de Comfy y apertura de carpetas Modelos/LoRAs/Resultados. Contrato: `docs/WORKSTATION-API.md`; encargo visual: `docs/CLAUDE-WORKSTATION-UI.md`. Los botones nuevos de workstation todavía deben añadirse al frontend.
+El backend incluye búsqueda acotada de instalaciones, selección autorizada, inicio/apertura de Comfy y apertura de carpetas Modelos/LoRAs/Resultados. Contrato: `docs/WORKSTATION-API.md`; encargo visual: `docs/CLAUDE-WORKSTATION-UI.md`. En Studio aparecen en el botón **Instalación** (detalles en `docs/CLAUDE-WORKSTATION-UI-RESULT.md`).
 
 Son acciones **locales**: solo loopback, Host y Origin válidos. No se exponen como control remoto por Tailnet. No hay stop/restart, no se matan procesos ajenos ni se copian pesos. La instalación propia verificada genera un perfil aprobado si falta; otras instalaciones detectadas requieren aprobación administrativa. Seleccionar una instalación no cambia automáticamente la ruta de generación de Studio: revisar `generation_binding` y configurar la URL al estar idle.
 
