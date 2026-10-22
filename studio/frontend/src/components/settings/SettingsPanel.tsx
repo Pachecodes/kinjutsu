@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 
+import { t, useT } from '../../i18n'
 import { BRAND } from '../../lib/brand'
 import { cn } from '../../lib/cn'
 import { HELP, type HelpEntry } from '../../lib/help'
@@ -71,6 +72,7 @@ function checkpointLabel(weights: WeightVariant, referenceMode: boolean): string
  * primary flow, with a plain explanation beside each control.
  */
 export function SettingsPanel({ capabilities }: { capabilities: CapabilityResponse }) {
+  useT()
   const state = useComposer()
   const [loraToAdd, setLoraToAdd] = useState('')
   const referenceMode = isReferenceMode(state.mode)
@@ -89,26 +91,25 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
   return (
     <div className="space-y-3" id="advanced-settings" data-tour="advanced-panel">
       <p className="text-[11px] leading-snug text-faint">
-        Todo lo técnico vive aquí. Las recetas ya lo rellenan; cambia solo lo que entiendas. Más pasos, fuerza o
-        resolución no garantizan mejor resultado.
+        {t('Todo lo técnico vive aquí. Las recetas ya lo rellenan; cambia solo lo que entiendas. Más pasos, fuerza o resolución no garantizan mejor resultado.')}
       </p>
 
       <Section
-        title="Modelo base (checkpoint)"
+        title={t('Modelo base (checkpoint)')}
         help={HELP.checkpoint}
         defaultOpen
         note={
-          omniMethod ? 'FastH3 Omni INT8 · escenas Ref2VA · sin LoRAs extra. Carril independiente 8237; no es el checkpoint OG ni FastH3 V2.' : vsaMethod
-            ? 'Ref2VA Turbo4 + compuerta VSA 75 %. Frames, checkpoint, codificador, LoRAs y continuidad siguen editables.'
+          omniMethod ? t('FastH3 Omni INT8 · escenas Ref2VA · sin LoRAs extra. Carril independiente 8237; no es el checkpoint OG ni FastH3 V2.') : vsaMethod
+            ? t('Ref2VA Turbo4 + compuerta VSA 75 %. Frames, checkpoint, codificador, LoRAs y continuidad siguen editables.')
             : referenceMode
-              ? 'Solo el checkpoint Ref2VA tiene versión GGUF.'
+              ? t('Solo el checkpoint Ref2VA tiene versión GGUF.')
               : trtMethod
-                ? 'W4A8 + Turbo 4 pasos v1.1 a 1.0. VAE INT8 estándar para condicionar; TensorRT solo decodifica vídeo.'
+                ? t('W4A8 + Turbo 4 pasos v1.1 a 1.0. VAE INT8 estándar para condicionar; TensorRT solo decodifica vídeo.')
                 : premiumMethod
-                  ? 'Pipeline verificado: W4A8 + LightX2V4 0,75, generación a media resolución, latente 3D 2× y Refine3 HD.'
+                  ? t('Pipeline verificado: W4A8 + LightX2V4 0,75, generación a media resolución, latente 3D 2× y Refine3 HD.')
                   : state.method === 'w4a8_lightx2v'
-                    ? 'Este método usa automáticamente el checkpoint W4A8 FL2VA con LightX2V4 a 0,75.'
-                    : 'Default / OG sigue a la tarea: FL2VA para texto y fotogramas, Ref2VA para referencias. El Studio solo libera VRAM al cambiar de checkpoint si ComfyUI está libre; nunca interrumpe un render.'
+                    ? t('Este método usa automáticamente el checkpoint W4A8 FL2VA con LightX2V4 a 0,75.')
+                    : t('Default / OG sigue a la tarea: FL2VA para texto y fotogramas, Ref2VA para referencias. El Studio solo libera VRAM al cambiar de checkpoint si ComfyUI está libre; nunca interrumpe un render.')
         }
       >
         <Segmented
@@ -120,54 +121,54 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
               value: 'int8',
               label: omniMethod ? 'FastH3 Omni INT8' : `Default / OG · ${referenceMode ? 'Ref2VA' : 'FL2VA'}`,
               disabled: omniMethod || w4a8Method || !capabilities.weights.int8,
-              tooltip: capabilities.weights.int8 ? 'Checkpoint INT8 podado.' : 'El checkpoint INT8 no está instalado.',
+              tooltip: capabilities.weights.int8 ? t('Checkpoint INT8 podado.') : t('El checkpoint INT8 no está instalado.'),
             },
             {
               value: 'gguf_q3km',
               label: 'GGUF Q3_K_M',
               disabled: omniMethod || w4a8Method || !referenceMode || !capabilities.weights.gguf_q3km,
               tooltip: !referenceMode
-                ? 'No existe versión GGUF del checkpoint FL2VA.'
+                ? t('No existe versión GGUF del checkpoint FL2VA.')
                 : capabilities.weights.gguf_q3km
-                  ? 'Ref2VA más pequeño: menos VRAM, menos fidelidad.'
-                  : 'La versión GGUF de Ref2VA no está instalada.',
+                  ? t('Ref2VA más pequeño: menos VRAM, menos fidelidad.')
+                  : t('La versión GGUF de Ref2VA no está instalada.'),
             },
             {
               value: 'erosmax_beta5',
               label: '10Eros-Max · ErosMax Beta 5',
               disabled: omniMethod || w4a8Method || !capabilities.weights.erosmax_beta5,
               tooltip: capabilities.weights.erosmax_beta5
-                ? 'TenStrip/10Eros-Max Beta 5 · híbrido W4A8/INT8 Turbo verificado. UNETLoader nativo. El tamaño no garantiza la VRAM.'
-                : 'h3ErosMax_beta5.safetensors no está instalado en H3 Lab.',
+                ? t('TenStrip/10Eros-Max Beta 5 · híbrido W4A8/INT8 Turbo verificado. UNETLoader nativo. El tamaño no garantiza la VRAM.')
+                : t('h3ErosMax_beta5.safetensors no está instalado en H3 Lab.'),
             },
           ]}
         />
         <p className="text-[11px] leading-snug text-faint">
-          {omniMethod ? 'La disponibilidad de Omni se comprueba en su propio método; los pesos OG instalados no lo habilitan.' : !capabilities.comfy_online
-            ? 'Disponibilidad de checkpoints desconocida · H3 Lab desconectado.'
+          {omniMethod ? t('La disponibilidad de Omni se comprueba en su propio método; los pesos OG instalados no lo habilitan.') : !capabilities.comfy_online
+            ? t('Disponibilidad de checkpoints desconocida · H3 Lab desconectado.')
             : capabilities.weights.erosmax_beta5
-              ? '10Eros-Max · instalado en el UNETLoader en vivo.'
-              : '10Eros-Max · no está en el UNETLoader en vivo.'}
+              ? t('10Eros-Max · instalado en el UNETLoader en vivo.')
+              : t('10Eros-Max · no está en el UNETLoader en vivo.')}
         </p>
         <p className="rounded-xl border border-accent/40 bg-accent/10 px-2.5 py-2 text-xs font-semibold text-fg">
-          {`Checkpoint elegido: ${omniMethod ? 'FastH3 Omni INT8' : checkpointLabel(state.weights, referenceMode)}`}
+          {t('Checkpoint elegido: {checkpoint}', { checkpoint: omniMethod ? 'FastH3 Omni INT8' : checkpointLabel(state.weights, referenceMode) })}
         </p>
         {recipeLocked ? (
           <p className="text-[11px] leading-snug text-accent">
-            {omniMethod ? 'Núcleo fijo: Euler/simple · 8 pasos · guidance 1 · shifts vídeo/audio 12/3 · INT8 · Standard · sin LoRAs ni continuidad automática.' : vsaMethod
-              ? 'Núcleo activo: Ref2VA Turbo4 a 1.0 · VSA 0,75 · sigma shifts 12/3 · euler/simple · 4 pasos. El resto sigue editable.'
+            {omniMethod ? t('Núcleo fijo: Euler/simple · 8 pasos · guidance 1 · shifts vídeo/audio 12/3 · INT8 · Standard · sin LoRAs ni continuidad automática.') : vsaMethod
+              ? t('Núcleo activo: Ref2VA Turbo4 a 1.0 · VSA 0,75 · sigma shifts 12/3 · euler/simple · 4 pasos. El resto sigue editable.')
               : premiumMethod
-                ? 'Receta activa: W4A8 FL2VA · LightX2V4 0,75 · latente 3D 2× · euler Refine3 · 124 frames.'
+                ? t('Receta activa: W4A8 FL2VA · LightX2V4 0,75 · latente 3D 2× · euler Refine3 · 124 frames.')
                 : trtMethod
-                  ? 'Receta activa: W4A8 FL2VA · Turbo 4 pasos v1.1 a 1.0 · res_multistep/simple · VAE estándar · TRT solo decodifica.'
-                  : 'Receta activa: W4A8 FL2VA · LightX2V4 0,75 · er_sde · simple · 4 pasos.'}
+                  ? t('Receta activa: W4A8 FL2VA · Turbo 4 pasos v1.1 a 1.0 · res_multistep/simple · VAE estándar · TRT solo decodifica.')
+                  : t('Receta activa: W4A8 FL2VA · LightX2V4 0,75 · er_sde · simple · 4 pasos.')}
           </p>
         ) : null}
       </Section>
 
-      <Section title="Codificador de prompt" help={HELP.encoder} defaultOpen>
+      <Section title={t('Codificador de prompt')} help={HELP.encoder} defaultOpen>
         <Segmented
-          label="Codificador de prompt"
+          label={t('Codificador de prompt')}
           value={state.encoder}
           onValueChange={state.setEncoder}
           options={[
@@ -175,21 +176,21 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
               value: 'standard',
               label: 'Standard',
               disabled: omniMethod || !capabilities.encoders.standard,
-              tooltip: 'Condicionador Qwen3-VL oficial de H3.',
+              tooltip: t('Condicionador Qwen3-VL oficial de H3.'),
             },
             {
               value: 'heretic',
               label: 'Heretic',
               disabled: omniMethod || !capabilities.encoders.heretic,
               tooltip: capabilities.encoders.heretic
-                ? 'Condicionador Qwen experimental. Cambia el condicionamiento del prompt, no los pesos de vídeo.'
-                : 'El condicionador Heretic NVFP4 no está instalado.',
+                ? t('Condicionador Qwen experimental. Cambia el condicionamiento del prompt, no los pesos de vídeo.')
+                : t('El condicionador Heretic NVFP4 no está instalado.'),
             },
           ]}
         />
         {state.encoder === 'heretic' ? (
           <p className="text-[11px] leading-snug text-warn">
-            Experimental. Puede reducir rechazos del prompt, pero no sustituye ni modifica el generador H3.
+            {t('Experimental. Puede reducir rechazos del prompt, pero no sustituye ni modifica el generador H3.')}
           </p>
         ) : null}
       </Section>
@@ -198,15 +199,15 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
         title={`LoRAs${state.lora_chain.length ? ` · ${state.lora_chain.length}` : ''}`}
         help={HELP.loras}
         defaultOpen={state.lora_chain.length > 0}
-        note={omniMethod ? 'Omni no admite LoRAs extra. Character Swap HD Turbo8 conserva su receta separada.' : 'Adaptadores opcionales. Se aplican en el orden de la lista, antes del método.'}
+        note={omniMethod ? t('Omni no admite LoRAs extra. Character Swap HD Turbo8 conserva su receta separada.') : t('Adaptadores opcionales. Se aplican en el orden de la lista, antes del método.')}
       >
         {capabilities.loras.length ? (
           <div className="space-y-3">
             <div className="flex items-end gap-2">
-              <Field label="Añadir LoRA" htmlFor="lora-select" className="min-w-0 flex-1">
+              <Field label={t('Añadir LoRA')} htmlFor="lora-select" className="min-w-0 flex-1">
                 <Select value={loraToAdd || undefined} disabled={omniMethod} onValueChange={setLoraToAdd}>
                   <SelectTrigger id="lora-select">
-                    <SelectValue placeholder="Elige un LoRA instalado" />
+                    <SelectValue placeholder={t('Elige un LoRA instalado')} />
                   </SelectTrigger>
                   <SelectContent>
                     {capabilities.loras.map((lora) => {
@@ -216,7 +217,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
                           key={lora.name}
                           value={lora.name}
                           disabled={!compatible || selectedLoras.has(lora.name)}
-                          description={!compatible ? `Solo ${lora.checkpoint.toUpperCase()}` : undefined}
+                          description={!compatible ? t('Solo {family}', { family: lora.checkpoint.toUpperCase() }) : undefined}
                         >
                           {lora.label}
                         </SelectItem>
@@ -228,7 +229,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
               <Button
                 variant="outline"
                 size="icon"
-                aria-label="Añadir el LoRA elegido"
+                aria-label={t('Añadir el LoRA elegido')}
                 disabled={omniMethod || !loraToAdd || state.lora_chain.length >= 8}
                 onClick={() => {
                   const lora = capabilities.loras.find((entry) => entry.name === loraToAdd)
@@ -259,7 +260,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label={`Subir ${name} en la cadena`}
+                          aria-label={t('Subir {name} en la cadena', { name })}
                           disabled={index === 0}
                           onClick={() => state.moveLora(index, index - 1)}
                         >
@@ -268,24 +269,24 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label={`Bajar ${name} en la cadena`}
+                          aria-label={t('Bajar {name} en la cadena', { name })}
                           disabled={index === state.lora_chain.length - 1}
                           onClick={() => state.moveLora(index, index + 1)}
                         >
                           <ChevronDown aria-hidden />
                         </Button>
-                        <Button variant="ghost" size="icon-sm" aria-label={`Quitar ${name}`} onClick={() => state.removeLora(index)}>
+                        <Button variant="ghost" size="icon-sm" aria-label={t('Quitar {name}', { name })} onClick={() => state.removeLora(index)}>
                           <Trash2 aria-hidden />
                         </Button>
                       </div>
                     </div>
-                    <Field label="Fuerza" help={HELP.loraStrength} aside={selected.strength.toFixed(2)}>
+                    <Field label={t('Fuerza')} help={HELP.loraStrength} aside={selected.strength.toFixed(2)}>
                       <Slider
                         value={[selected.strength]}
                         min={-2}
                         max={2}
                         step={0.05}
-                        aria-label={`Fuerza de ${name}`}
+                        aria-label={t('Fuerza de {name}', { name })}
                         onValueChange={([strength]) => state.setLoraStrength(index, strength)}
                       />
                     </Field>
@@ -294,38 +295,38 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
               })}
             </ol>
             {state.lora_chain.length >= 8 ? (
-              <p className="text-[11px] text-warn">Cadena completa (máximo 8 LoRAs).</p>
+              <p className="text-[11px] text-warn">{t('Cadena completa (máximo 8 LoRAs).')}</p>
             ) : null}
           </div>
         ) : (
-          <p className="text-xs leading-snug text-faint">No hay LoRAs instalados en H3 Lab.</p>
+          <p className="text-xs leading-snug text-faint">{t('No hay LoRAs instalados en H3 Lab.')}</p>
         )}
       </Section>
 
-      <Section title="Método / acelerador" help={HELP.method}>
+      <Section title={t('Método / acelerador')} help={HELP.method}>
         <MethodPicker methods={capabilities.methods} comfyOnline={capabilities.comfy_online} />
       </Section>
 
       <Section
-        title="Muestreo"
+        title={t('Muestreo')}
         help={HELP.sampler}
         defaultOpen
         note={
           premiumMethod
-            ? 'Pase base fijo: er_sde · simple · 4 pasos. El refinado HD usa euler con el esquema de tres pasos verificado.'
+            ? t('Pase base fijo: er_sde · simple · 4 pasos. El refinado HD usa euler con el esquema de tres pasos verificado.')
             : trtMethod
-              ? 'Pase validado fijo: res_multistep · simple · 4 pasos.'
+              ? t('Pase validado fijo: res_multistep · simple · 4 pasos.')
               : undefined
         }
       >
-        <Field label="Pasos" help={HELP.steps} htmlFor="steps-slider" aside={String(state.steps)}>
+        <Field label={t('Pasos')} help={HELP.steps} htmlFor="steps-slider" aside={String(state.steps)}>
           <Slider
             id="steps-slider"
             value={[state.steps]}
             min={1}
             max={capabilities.limits.max_steps}
             step={1}
-            aria-label="Pasos de muestreo"
+            aria-label={t('Pasos de muestreo')}
             disabled={recipeLocked}
             onValueChange={([next]) => state.setSteps(next)}
           />
@@ -362,9 +363,9 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
         </Field>
 
         <Field
-          label="Sigmas manuales" help={HELP.sigmas}
+          label={t('Sigmas manuales')} help={HELP.sigmas}
           htmlFor="custom-sigmas"
-          hint="Lista descendente separada por comas, terminada en 0. Sustituye al scheduler. Se aplica al salir del campo; vacíalo para volver al scheduler."
+          hint={t('Lista descendente separada por comas, terminada en 0. Sustituye al scheduler. Se aplica al salir del campo; vacíalo para volver al scheduler.')}
         >
           <Input
             id="custom-sigmas"
@@ -381,21 +382,21 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
       </Section>
 
       {state.method === 'easycache' ? (
-        <Section title="Caché de Fast Preview" defaultOpen>
-          <Field label="Umbral de reutilización" help={HELP.easycacheThreshold} aside={state.easycache.reuse_threshold.toFixed(2)}>
+        <Section title={t('Caché de Fast Preview')} defaultOpen>
+          <Field label={t('Umbral de reutilización')} help={HELP.easycacheThreshold} aside={state.easycache.reuse_threshold.toFixed(2)}>
             <Slider
               value={[state.easycache.reuse_threshold]}
               min={0}
               max={3}
               step={0.05}
-              aria-label="Umbral de reutilización de EasyCache"
+              aria-label={t('Umbral de reutilización de EasyCache')}
               onValueChange={([reuse_threshold]) => state.setEasyCache({ reuse_threshold })}
             />
           </Field>
           <Field
-            label="Tramo de caché" help={HELP.easycacheWindow}
+            label={t('Tramo de caché')} help={HELP.easycacheWindow}
             aside={`${state.easycache.start_percent.toFixed(2)} – ${state.easycache.end_percent.toFixed(2)}`}
-            hint="El inicio debe ir antes del final."
+            hint={t('El inicio debe ir antes del final.')}
           >
             <Slider
               value={[state.easycache.start_percent, state.easycache.end_percent]}
@@ -403,7 +404,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
               max={1}
               step={0.05}
               minStepsBetweenThumbs={1}
-              aria-label="Tramo de EasyCache"
+              aria-label={t('Tramo de EasyCache')}
               onValueChange={([start_percent, end_percent]) => state.setEasyCache({ start_percent, end_percent })}
             />
           </Field>
@@ -411,7 +412,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
       ) : null}
 
       {state.method === 'sol' ? (
-        <Section title="SolAttn (experimental)" defaultOpen note="Medido más lento que Quality y con SSIM 0,778.">
+        <Section title="SolAttn (experimental)" defaultOpen note={t('Medido más lento que Quality y con SSIM 0,778.')}>
           <Field label="Tau" help={HELP.solTau} aside={state.sol.tau.toFixed(2)}>
             <Slider
               value={[state.sol.tau]}
@@ -422,18 +423,18 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
               onValueChange={([tau]) => state.setSol({ tau })}
             />
           </Field>
-          <Field label="Tramo del parche" aside={`${state.sol.start_percent.toFixed(2)} – ${state.sol.end_percent.toFixed(2)}`}>
+          <Field label={t('Tramo del parche')} aside={`${state.sol.start_percent.toFixed(2)} – ${state.sol.end_percent.toFixed(2)}`}>
             <Slider
               value={[state.sol.start_percent, state.sol.end_percent]}
               min={0}
               max={1}
               step={0.05}
               minStepsBetweenThumbs={1}
-              aria-label="Tramo de Sol"
+              aria-label={t('Tramo de Sol')}
               onValueChange={([start_percent, end_percent]) => state.setSol({ start_percent, end_percent })}
             />
           </Field>
-          <Field label="Tokens mínimos" htmlFor="sol-min-tokens">
+          <Field label={t('Tokens mínimos')} htmlFor="sol-min-tokens">
             <Input
               id="sol-min-tokens"
               type="number"
@@ -464,11 +465,11 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
               <Switch checked={state.sol.int8_qk} onCheckedChange={(int8_qk) => state.setSol({ int8_qk })} aria-label="INT8 QK" />
             </label>
             <label className="flex items-center justify-between gap-2 text-xs text-muted">
-              Orden Morton
-              <Switch checked={state.sol.morton} onCheckedChange={(morton) => state.setSol({ morton })} aria-label="Orden Morton" />
+              {t('Orden Morton')}
+              <Switch checked={state.sol.morton} onCheckedChange={(morton) => state.setSol({ morton })} aria-label={t('Orden Morton')} />
             </label>
             {state.sol.morton ? (
-              <Field label="Curva Morton" htmlFor="sol-curve">
+              <Field label={t('Curva Morton')} htmlFor="sol-curve">
                 <Select
                   value={state.sol.morton_curve}
                   onValueChange={(value) => state.setSol({ morton_curve: value as typeof state.sol.morton_curve })}
@@ -484,40 +485,40 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
               </Field>
             ) : null}
             <label className="flex items-center justify-between gap-2 text-xs text-muted">
-              Usar TMA
-              <Switch checked={state.sol.use_tma} onCheckedChange={(use_tma) => state.setSol({ use_tma })} aria-label="Usar TMA" />
+              {t('Usar TMA')}
+              <Switch checked={state.sol.use_tma} onCheckedChange={(use_tma) => state.setSol({ use_tma })} aria-label={t('Usar TMA')} />
             </label>
           </div>
         </Section>
       ) : null}
 
-      <Section title="Continuidad" help={HELP.continuity} note="Divide tomas largas en ventanas seguras para la VRAM y fija latentes AV entre ventanas.">
+      <Section title={t('Continuidad')} help={HELP.continuity} note={t('Divide tomas largas en ventanas seguras para la VRAM y fija latentes AV entre ventanas.')}>
         <label className="flex items-center justify-between gap-3 text-xs text-muted">
           <span>
-            <span className="block text-fg">Continuidad automática</span>
+            <span className="block text-fg">{t('Continuidad automática')}</span>
             <span className="mt-0.5 block text-[11px] leading-snug text-faint">
-              Detecta cuándo una ventana no es segura; las tomas cortas no cambian.
+              {t('Detecta cuándo una ventana no es segura; las tomas cortas no cambian.')}
             </span>
           </span>
           <Switch
             checked={state.continuity.auto_split}
             disabled={omniMethod}
             onCheckedChange={(auto_split) => state.setContinuity({ auto_split })}
-            aria-label="Continuidad automática"
+            aria-label={t('Continuidad automática')}
           />
         </label>
 
-        <Field label="Ventana de continuidad" help={HELP.continuityWindow} htmlFor="continuity-window">
+        <Field label={t('Ventana de continuidad')} help={HELP.continuityWindow} htmlFor="continuity-window">
           <Select
             value={state.continuity.window}
             disabled={!state.continuity.auto_split}
             onValueChange={(window) => state.setContinuity({ window: window as typeof state.continuity.window })}
           >
-            <SelectTrigger id="continuity-window" aria-label="Ventana de continuidad">
+            <SelectTrigger id="continuity-window" aria-label={t('Ventana de continuidad')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="auto">Auto · ajustar a la RTX 4090</SelectItem>
+              <SelectItem value="auto">{t('Auto · ajustar a la RTX 4090')}</SelectItem>
               {['243', '192', '141', '124', '90'].map((frames) => (
                 <SelectItem key={frames} value={frames}>
                   {frames} frames
@@ -527,20 +528,20 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
           </Select>
         </Field>
 
-        <Field label="Solape de latentes" help={HELP.continuityPin} htmlFor="continuity-pin">
+        <Field label={t('Solape de latentes')} help={HELP.continuityPin} htmlFor="continuity-pin">
           <Select
             value={state.continuity.pin_frames}
             disabled={!state.continuity.auto_split}
             onValueChange={(pin_frames) => state.setContinuity({ pin_frames: pin_frames as typeof state.continuity.pin_frames })}
           >
-            <SelectTrigger id="continuity-pin" aria-label="Solape de latentes">
+            <SelectTrigger id="continuity-pin" aria-label={t('Solape de latentes')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">5 frames · ligero</SelectItem>
-              <SelectItem value="22">22 frames · recomendado</SelectItem>
-              <SelectItem value="39">39 frames · fuerte</SelectItem>
-              <SelectItem value="56">56 frames · máximo</SelectItem>
+              <SelectItem value="5">{t('5 frames · ligero')}</SelectItem>
+              <SelectItem value="22">{t('22 frames · recomendado')}</SelectItem>
+              <SelectItem value="39">{t('39 frames · fuerte')}</SelectItem>
+              <SelectItem value="56">{t('56 frames · máximo')}</SelectItem>
             </SelectContent>
           </Select>
         </Field>
@@ -548,41 +549,46 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
         {state.continuity.auto_split &&
         (state.mode === 'first_frame' || state.mode === 'first_last' || state.mode === 'performance') ? (
           <p className="text-[11px] leading-snug text-warn">
-            La continuidad automática no funciona con fotogramas ni Performance: apágala o elige Texto o Referencias.
+            {t('La continuidad automática no funciona con fotogramas ni Performance: apágala o elige Texto o Referencias.')}
           </p>
         ) : null}
         {state.continuity.auto_split && state.references.some((slot) => slot.role === 'aligned_guide') ? (
-          <p className="text-[11px] leading-snug text-warn">Una guía alineada necesita la continuidad apagada.</p>
+          <p className="text-[11px] leading-snug text-warn">{t('Una guía alineada necesita la continuidad apagada.')}</p>
         ) : null}
         {state.continuity.auto_split && (trtMethod || premiumMethod) ? (
           <p className="text-[11px] leading-snug text-warn">
-            La continuidad por latentes no admite el condicionamiento TRT ni el refinado de dos pasadas.
+            {t('La continuidad por latentes no admite el condicionamiento TRT ni el refinado de dos pasadas.')}
           </p>
         ) : null}
       </Section>
 
       {referenceMode ? (
-        <Section title="Detalle de referencias" help={HELP.refDetail}>
+        <Section title={t('Detalle de referencias')} help={HELP.refDetail}>
           <Segmented
-            label="Detalle de referencias"
+            label={t('Detalle de referencias')}
             value={state.ref_image_size}
             onValueChange={state.setRefImageSize}
             options={[
-              { value: 'match', label: 'Igual al cuadro' },
-              { value: 'max', label: 'Máximo detalle' },
+              { value: 'match', label: t('Igual al cuadro') },
+              { value: 'max', label: t('Máximo detalle') },
             ]}
           />
           <p className="text-[11px] leading-snug text-faint">
             {state.ref_image_size === 'max'
-              ? 'Máximo mantiene cada referencia a 2048 px en todos los pasos. El render puede tardar varias veces la estimación.'
-              : 'Igual al cuadro lee las referencias al tamaño de la toma.'}
+              ? t('Máximo mantiene cada referencia a 2048 px en todos los pasos. El render puede tardar varias veces la estimación.')
+              : t('Igual al cuadro lee las referencias al tamaño de la toma.')}
           </p>
         </Section>
       ) : null}
 
       <Section
-        title="Base de las medidas"
-        note={`Perfiles medidos en ${BRAND.machine} a ${capabilities.benchmark_basis.width}×${capabilities.benchmark_basis.height} y ${capabilities.benchmark_basis.seconds} s; cada fila indica sus pasos. Son referencia, no garantía.`}
+        title={t('Base de las medidas')}
+        note={t('Perfiles medidos en {machine} a {width}×{height} y {seconds} s; cada fila indica sus pasos. Son referencia, no garantía.', {
+          machine: BRAND.machine,
+          width: capabilities.benchmark_basis.width,
+          height: capabilities.benchmark_basis.height,
+          seconds: capabilities.benchmark_basis.seconds,
+        })}
       >
         <dl className="space-y-1.5">
           {capabilities.methods.map((method) => (
@@ -590,7 +596,10 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
               <dt className={cn('text-xs', method.id === (state.method as MethodId) ? 'text-fg' : 'text-muted')}>{method.label}</dt>
               <dd className="tabular text-right text-[11px] text-faint">
                 {method.measured_seconds !== null
-                  ? `${method.measured_seconds.toFixed(2)} s @ ${method.measured_steps ?? capabilities.benchmark_basis.steps} pasos`
+                  ? t('{seconds} s @ {steps} pasos', {
+                      seconds: method.measured_seconds.toFixed(2),
+                      steps: method.measured_steps ?? capabilities.benchmark_basis.steps,
+                    })
                   : '—'}
                 {method.measured_ssim !== null ? ` · SSIM ${method.measured_ssim.toFixed(3)}` : ''}
               </dd>

@@ -12,6 +12,7 @@ import { Switch } from '../ui/switch'
 import { PrepareGuide } from './PrepareGuide'
 import { InfoTip } from '../ui/info-tip'
 import { Tooltip } from '../ui/tooltip'
+import { formatDecimal, t, useT } from '../../i18n'
 
 interface ReferenceCardProps {
   alignedGuides?: boolean
@@ -70,6 +71,7 @@ export function ReferenceCard({
   onDragEnd,
   onDragOver,
 }: ReferenceCardProps) {
+  useT()
   const setRole = useComposer((state) => state.setRole)
   const setIncludeAudio = useComposer((state) => state.setIncludeAudio)
   const removeReference = useComposer((state) => state.removeReference)
@@ -98,7 +100,7 @@ export function ReferenceCard({
         'group flex gap-2.5 rounded-2xl border border-white/[0.06] bg-ink-850 p-2 transition-colors',
         dragging && 'border-accent/50 opacity-60',
       )}
-      aria-label={`Referencia ${index + 1}: ${slot.asset.original_name}`}
+      aria-label={t('Referencia {n}: {name}', { n: index + 1, name: slot.asset.original_name })}
     >
       <div className="flex flex-col items-center gap-0.5 pt-0.5">
         <GripVertical className="size-3.5 cursor-grab text-ink-600 group-hover:text-faint" aria-hidden />
@@ -106,7 +108,7 @@ export function ReferenceCard({
           variant="ghost"
           size="icon-sm"
           className="size-5"
-          aria-label={`Subir ${slot.asset.original_name} en el orden`}
+          aria-label={t('Subir {name} en el orden', { name: slot.asset.original_name })}
           disabled={index === 0}
           onClick={() => reorderReference(index, index - 1)}
         >
@@ -116,7 +118,7 @@ export function ReferenceCard({
           variant="ghost"
           size="icon-sm"
           className="size-5"
-          aria-label={`Bajar ${slot.asset.original_name} en el orden`}
+          aria-label={t('Bajar {name} en el orden', { name: slot.asset.original_name })}
           disabled={index === total - 1}
           onClick={() => reorderReference(index, index + 1)}
         >
@@ -142,14 +144,14 @@ export function ReferenceCard({
             <p className="tabular text-[10px] text-faint">
               {formatBytes(slot.asset.size_bytes)}
               {slot.asset.width && slot.asset.height ? ` · ${slot.asset.width}×${slot.asset.height}` : ''}
-              {duration !== null ? ` · ${duration.toFixed(2).replace('.', ',')} s` : ''}
-              {slot.asset.guide_provenance ? ' · guía preparada' : ''}
+              {duration !== null ? ` · ${formatDecimal(duration, 2)} s` : ''}
+              {slot.asset.guide_provenance ? t(' · guía preparada') : ''}
             </p>
           </div>
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Quitar ${slot.asset.original_name} de la toma`}
+            aria-label={t('Quitar {name} de la toma', { name: slot.asset.original_name })}
             onClick={() => removeReference(slot.uid)}
           >
             <X aria-hidden />
@@ -159,7 +161,7 @@ export function ReferenceCard({
         <div className="flex flex-wrap items-center gap-1.5">
           <Select value={slot.role} onValueChange={(role) => setRole(slot.uid, role as RefRole)}>
             <SelectTrigger
-              aria-label={`Rol de ${slot.asset.original_name}`}
+              aria-label={t('Rol de {name}', { name: slot.asset.original_name })}
               className="h-7 w-[8.5rem] text-[11px]"
             >
               <SelectValue />
@@ -173,14 +175,14 @@ export function ReferenceCard({
             </SelectContent>
           </Select>
 
-          <InfoTip help={ROLE_HELP[slot.role]} label={`Rol ${ROLE_META[slot.role].label}`} />
-          {slot.role === 'aligned_guide' ? <p className="text-[10px] leading-snug text-accent">Guía desde el frame 0 · sin token de vídeo · sin sonido. Debe coincidir con tamaño, frames y 24 FPS de la salida.</p> : null}
+          <InfoTip help={ROLE_HELP[slot.role]} label={t('Rol {role}', { role: ROLE_META[slot.role].label })} />
+          {slot.role === 'aligned_guide' ? <p className="text-[10px] leading-snug text-accent">{t('Guía desde el frame 0 · sin token de vídeo · sin sonido. Debe coincidir con tamaño, frames y 24 FPS de la salida.')}</p> : null}
           {slot.asset.kind === 'video' && slot.role !== 'aligned_guide' ? (
             <Tooltip
               content={
                 slot.asset.has_audio === false
-                  ? 'Este clip no tiene pista de sonido.'
-                  : 'Pasa el sonido del clip a H3 para guiar el ritmo. No copia la voz tal cual.'
+                  ? t('Este clip no tiene pista de sonido.')
+                  : t('Pasa el sonido del clip a H3 para guiar el ritmo. No copia la voz tal cual.')
               }
             >
               <label className="flex items-center gap-1.5 text-[11px] text-muted">
@@ -188,10 +190,10 @@ export function ReferenceCard({
                   checked={slot.include_audio}
                   disabled={slot.asset.has_audio === false}
                   onCheckedChange={(next) => setIncludeAudio(slot.uid, next)}
-                  aria-label={`Usar el sonido de ${slot.asset.original_name}`}
+                  aria-label={t('Usar el sonido de {name}', { name: slot.asset.original_name })}
                 />
                 <Video className="size-3" aria-hidden />
-                Sonido
+                {t('Sonido')}
               </label>
             </Tooltip>
           ) : null}

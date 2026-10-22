@@ -2,6 +2,7 @@ import { Clipboard, Eye, LayoutTemplate, Plus, Trash2 } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 
 import { usePromptCatalog } from '../../hooks/features'
+import { t, useT } from '../../i18n'
 import { copyText } from '../../hooks/useCopy'
 import { ApiError, api } from '../../lib/api'
 import { cn } from '../../lib/cn'
@@ -101,6 +102,7 @@ function QuickFill({ options, onPick, label }: { options: { id: string; label: s
  * the prompt — never the recipe, never a render.
  */
 export function PromptFormBuilder() {
+  useT()
   const [open, setOpen] = useState(false)
   const mode = useComposer((state) => state.mode)
   const presetId = useComposer((state) => state.presetId)
@@ -137,12 +139,12 @@ export function PromptFormBuilder() {
     try {
       const result = await api.buildPrompt(active, form)
       if (result.submits_render !== false || result.requires_agent !== false) {
-        throw new Error('Respuesta inesperada del generador de prompts; no se aplica.')
+        throw new Error(t('Respuesta inesperada del generador de prompts; no se aplica.'))
       }
       setPreview({ key, prompt: result.prompt })
     } catch (cause) {
       // The editor prompt is never touched on error.
-      setError(cause instanceof ApiError || cause instanceof Error ? cause.message : 'No se pudo construir el prompt.')
+      setError(cause instanceof ApiError || cause instanceof Error ? cause.message : t('No se pudo construir el prompt.'))
     } finally {
       setBusy(false)
     }
@@ -159,18 +161,18 @@ export function PromptFormBuilder() {
       <DialogTrigger asChild>
         <button type="button" className="chip min-h-9 py-1.5" data-tour="prompt-builder">
           <LayoutTemplate className="size-3.5" aria-hidden />
-          Plantilla
+          {t('Plantilla')}
         </button>
       </DialogTrigger>
       <DialogPanel
-        title="Plantilla H3 sin agente"
-        description="Rellena el formulario; el backend lo ordena en el formato de H3. Sin IA ni tokens: no mira tus archivos, no traduce y no genera."
+        title={t('Plantilla H3 sin agente')}
+        description={t('Rellena el formulario; el backend lo ordena en el formato de H3. Sin IA ni tokens: no mira tus archivos, no traduce y no genera.')}
         className="w-[min(52rem,calc(100vw-1.5rem))]"
       >
         <div className="space-y-5">
           <fieldset className="space-y-1.5">
-            <legend className="eyebrow mb-1">Plantilla</legend>
-            <div role="radiogroup" aria-label="Plantilla" className="grid gap-1.5 sm:grid-cols-2">
+            <legend className="eyebrow mb-1">{t('Plantilla')}</legend>
+            <div role="radiogroup" aria-label={t('Plantilla')} className="grid gap-1.5 sm:grid-cols-2">
               {(catalog.data?.templates ?? []).map((entry) => {
                 const issue = templateProblem(entry.id, mapping)
                 const selected = entry.id === active
@@ -198,31 +200,31 @@ export function PromptFormBuilder() {
                 )
               })}
             </div>
-            {catalog.isLoading ? <p className="text-[11px] text-faint">Cargando plantillas…</p> : null}
-            {catalog.isError ? <p role="alert" className="text-[11px] text-danger">No se pudo cargar el catálogo de plantillas.</p> : null}
-            {info ? <p className="text-[10px] text-faint">Estado: {info.status}</p> : null}
+            {catalog.isLoading ? <p className="text-[11px] text-faint">{t('Cargando plantillas…')}</p> : null}
+            {catalog.isError ? <p role="alert" className="text-[11px] text-danger">{t('No se pudo cargar el catálogo de plantillas.')}</p> : null}
+            {info ? <p className="text-[10px] text-faint">{t('Estado: {status}', { status: info.status })}</p> : null}
           </fieldset>
 
           {problem ? (
             <p role="alert" className="rounded-xl border border-warn/35 bg-warn-soft/40 px-3 py-2 text-[12px] text-warn">
-              {problem} Ajusta las referencias de la toma o elige otra plantilla; el formulario no inventa adjuntos.
+              {problem} {t('Ajusta las referencias de la toma o elige otra plantilla; el formulario no inventa adjuntos.')}
             </p>
           ) : null}
 
           <section className="space-y-2 rounded-xl border border-white/[0.06] bg-ink-950/40 p-3">
             <p className="text-[12px] text-fg">
-              Duración efectiva: <span className="tabular font-semibold">{formatSecondsEs(effectiveSeconds(length), 3)}</span>
-              <span className="text-faint"> · {length} frames de la salida (no se edita aquí)</span>
+              {t('Duración efectiva:')} <span className="tabular font-semibold">{formatSecondsEs(effectiveSeconds(length), 3)}</span>
+              <span className="text-faint"> · {t('{n} frames de la salida (no se edita aquí)', { n: length })}</span>
             </p>
             <p className="text-[11px] text-faint">
-              Describe en <strong className="text-muted">inglés</strong> lo visual y el sonido: no se traduce nada. Los diálogos se
-              conservan tal cual en su idioma. Un párrafo por campo, sin saltos de línea.
+              {t('Describe en')} <strong className="text-muted">{t('inglés')}</strong>{' '}
+              {t('lo visual y el sonido: no se traduce nada. Los diálogos se conservan tal cual en su idioma. Un párrafo por campo, sin saltos de línea.')}
             </p>
           </section>
 
           {mapping.assets.length > 0 ? (
             <section className="space-y-2">
-              <h3 className="eyebrow">Adjuntos de la toma</h3>
+              <h3 className="eyebrow">{t('Adjuntos de la toma')}</h3>
               {mapping.assets.map((asset) => (
                 <Text
                   key={asset.uid}
@@ -230,36 +232,36 @@ export function PromptFormBuilder() {
                   value={draft.descriptions[asset.uid] ?? ''}
                   onChange={(value) => set({ descriptions: { ...draft.descriptions, [asset.uid]: value } })}
                   placeholder={asset.kind === 'aligned_guide' ? 'Describe the existing guide: clothing, scene, motion' : 'Describe what this attachment shows'}
-                  hint={asset.kind === 'aligned_guide' ? 'Describe la guía que ya existe, no una escena nueva.' : undefined}
+                  hint={asset.kind === 'aligned_guide' ? t('Describe la guía que ya existe, no una escena nueva.') : undefined}
                 />
               ))}
             </section>
           ) : null}
 
           <section className="grid gap-3 sm:grid-cols-2">
-            <Text label="Identidad" value={draft.identity} onChange={(identity) => set({ identity })} placeholder="A single adult performer with…" multiline />
-            <Text label="Estilo" value={draft.style} onChange={(style) => set({ style })} placeholder="Live-action, natural colors" multiline />
+            <Text label={t('Identidad')} value={draft.identity} onChange={(identity) => set({ identity })} placeholder="A single adult performer with…" multiline />
+            <Text label={t('Estilo')} value={draft.style} onChange={(style) => set({ style })} placeholder="Live-action, natural colors" multiline />
           </section>
 
           <section className="space-y-3">
-            <h3 className="eyebrow">{aligned ? 'Plano continuo de la guía' : 'Planos'}</h3>
+            <h3 className="eyebrow">{aligned ? t('Plano continuo de la guía') : t('Planos')}</h3>
             {draft.shots.map((shot, index) => (
               <div key={index} className="space-y-2 rounded-xl border border-white/[0.06] p-3">
                 <div className="flex items-end gap-2">
-                  <p className="text-[12px] font-semibold text-fg">Plano {index + 1}</p>
+                  <p className="text-[12px] font-semibold text-fg">{t('Plano {n}', { n: index + 1 })}</p>
                   {index > 0 ? (
                     <div className="w-32">
-                      <Seconds label="Empieza en (s)" value={shot.start_seconds} onChange={(start_seconds) => setShot(index, { start_seconds })} />
+                      <Seconds label={t('Empieza en (s)')} value={shot.start_seconds} onChange={(start_seconds) => setShot(index, { start_seconds })} />
                     </div>
                   ) : (
-                    <span className="text-[10px] text-faint">empieza en 0 s</span>
+                    <span className="text-[10px] text-faint">{t('empieza en 0 s')}</span>
                   )}
                   {index > 0 ? (
                     <Button
                       variant="ghost"
                       size="icon-sm"
                       className="ml-auto"
-                      aria-label={`Quitar plano ${index + 1}`}
+                      aria-label={t('Quitar plano {n}', { n: index + 1 })}
                       onClick={() => set({ shots: draft.shots.filter((_, i) => i !== index) })}
                     >
                       <Trash2 aria-hidden />
@@ -267,17 +269,17 @@ export function PromptFormBuilder() {
                   ) : null}
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <Text label="Escena" value={shot.scene} onChange={(scene) => setShot(index, { scene })} />
-                  <Text label="Acción / actuación" value={shot.performance} onChange={(performance) => setShot(index, { performance })} />
+                  <Text label={t('Escena')} value={shot.scene} onChange={(scene) => setShot(index, { scene })} />
+                  <Text label={t('Acción / actuación')} value={shot.performance} onChange={(performance) => setShot(index, { performance })} />
                   <div className="space-y-1">
-                    <Text label="Cámara" value={shot.camera} onChange={(camera) => setShot(index, { camera })} />
-                    <QuickFill label={`Cámara rápida plano ${index + 1}`} options={CAMERA_OPTIONS} onPick={(text) => setShot(index, { camera: `The camera uses a ${text}` })} />
+                    <Text label={t('Cámara')} value={shot.camera} onChange={(camera) => setShot(index, { camera })} />
+                    <QuickFill label={t('Cámara rápida plano {n}', { n: index + 1 })} options={CAMERA_OPTIONS} onPick={(text) => setShot(index, { camera: `The camera uses a ${text}` })} />
                   </div>
                   <div className="space-y-1">
-                    <Text label="Luz" value={shot.lighting} onChange={(lighting) => setShot(index, { lighting })} />
-                    <QuickFill label={`Luz rápida plano ${index + 1}`} options={LIGHT_OPTIONS} onPick={(text) => setShot(index, { lighting: text.charAt(0).toUpperCase() + text.slice(1) })} />
+                    <Text label={t('Luz')} value={shot.lighting} onChange={(lighting) => setShot(index, { lighting })} />
+                    <QuickFill label={t('Luz rápida plano {n}', { n: index + 1 })} options={LIGHT_OPTIONS} onPick={(text) => setShot(index, { lighting: text.charAt(0).toUpperCase() + text.slice(1) })} />
                   </div>
-                  <Text label="Sonido del plano" value={draft.silent ? 'N/A' : shot.sound} onChange={(sound) => setShot(index, { sound })} />
+                  <Text label={t('Sonido del plano')} value={draft.silent ? 'N/A' : shot.sound} onChange={(sound) => setShot(index, { sound })} />
                 </div>
               </div>
             ))}
@@ -295,60 +297,60 @@ export function PromptFormBuilder() {
                 }
               >
                 <Plus aria-hidden />
-                Añadir corte
+                {t('Añadir corte')}
               </Button>
             ) : (
-              <p className="text-[11px] text-faint">La receta aprobada conserva el tiempo de la guía: un solo plano, sin cortes, diálogo ni música.</p>
+              <p className="text-[11px] text-faint">{t('La receta aprobada conserva el tiempo de la guía: un solo plano, sin cortes, diálogo ni música.')}</p>
             )}
           </section>
 
           <section className="space-y-2">
-            <h3 className="eyebrow">Sonido</h3>
+            <h3 className="eyebrow">{t('Sonido')}</h3>
             <label className="flex items-center gap-2 text-[12px] text-fg">
               <input type="checkbox" checked={draft.silent} onChange={(event) => set({ silent: event.target.checked })} className="size-4 accent-[hsl(var(--accent))]" />
-              Silencio completo (sin ambiente, música ni diálogo)
+              {t('Silencio completo (sin ambiente, música ni diálogo)')}
             </label>
             {!draft.silent ? (
               <div className="grid gap-2 sm:grid-cols-2">
-                <Text label="Ambiente general" value={draft.soundscape} onChange={(soundscape) => set({ soundscape })} placeholder="Quiet room tone continues throughout." />
-                <Text label="Música" value={aligned ? 'N/A' : draft.music} onChange={(music) => set({ music })} hint={aligned ? 'Sin música en la receta aprobada.' : 'N/A si no hay música.'} />
+                <Text label={t('Ambiente general')} value={draft.soundscape} onChange={(soundscape) => set({ soundscape })} placeholder="Quiet room tone continues throughout." />
+                <Text label={t('Música')} value={aligned ? 'N/A' : draft.music} onChange={(music) => set({ music })} hint={aligned ? t('Sin música en la receta aprobada.') : t('N/A si no hay música.')} />
               </div>
             ) : null}
           </section>
 
           {!aligned && !draft.silent ? (
             <section className="space-y-2">
-              <h3 className="eyebrow">Diálogo (opcional)</h3>
+              <h3 className="eyebrow">{t('Diálogo (opcional)')}</h3>
               {draft.dialogue.map((line, index) => (
                 <div key={index} className="space-y-2 rounded-xl border border-white/[0.06] p-3">
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
-                      <label className="eyebrow block" htmlFor={`line-shot-${index}`}>Plano</label>
+                      <label className="eyebrow block" htmlFor={`line-shot-${index}`}>{t('Plano')}</label>
                       <Input id={`line-shot-${index}`} type="number" min={1} max={draft.shots.length} value={line.shot} onChange={(event) => setLine(index, { shot: Number(event.target.value) })} className="text-[16px] md:text-sm" />
                     </div>
-                    <Seconds label="Desde (s)" value={line.start_seconds} onChange={(start_seconds) => setLine(index, { start_seconds })} />
-                    <Seconds label="Hasta (s)" value={line.end_seconds} onChange={(end_seconds) => setLine(index, { end_seconds })} />
+                    <Seconds label={t('Desde (s)')} value={line.start_seconds} onChange={(start_seconds) => setLine(index, { start_seconds })} />
+                    <Seconds label={t('Hasta (s)')} value={line.end_seconds} onChange={(end_seconds) => setLine(index, { end_seconds })} />
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <Text label="Quién habla" value={line.speaker} onChange={(speaker) => setLine(index, { speaker })} placeholder="The adult performer with a low voice" />
-                    <Text label="Idioma" value={line.language} onChange={(language) => setLine(index, { language })} placeholder="Spanish" />
-                    <Text label="Texto exacto" value={line.text} onChange={(text) => setLine(index, { text })} />
-                    <Text label="Cómo lo dice" value={line.delivery} onChange={(delivery) => setLine(index, { delivery })} placeholder="quietly" />
+                    <Text label={t('Quién habla')} value={line.speaker} onChange={(speaker) => setLine(index, { speaker })} placeholder="The adult performer with a low voice" />
+                    <Text label={t('Idioma')} value={line.language} onChange={(language) => setLine(index, { language })} placeholder="Spanish" />
+                    <Text label={t('Texto exacto')} value={line.text} onChange={(text) => setLine(index, { text })} />
+                    <Text label={t('Cómo lo dice')} value={line.delivery} onChange={(delivery) => setLine(index, { delivery })} placeholder="quietly" />
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-[12px] text-fg">
                     <label className="flex items-center gap-1.5">
                       <input type="checkbox" checked={Boolean(line.voiceover)} onChange={(event) => setLine(index, { voiceover: event.target.checked || undefined })} className="size-4 accent-[hsl(var(--accent))]" />
-                      Voz en off
+                      {t('Voz en off')}
                     </label>
                     {motion ? (
                       <label className="flex items-center gap-1.5">
                         <input type="checkbox" checked={line.subject === 1} onChange={(event) => setLine(index, { subject: event.target.checked ? 1 : undefined })} className="size-4 accent-[hsl(var(--accent))]" />
-                        La dice la identidad (&lt;Subject 1&gt;)
+                        {t('La dice la identidad (<Subject 1>)')}
                       </label>
                     ) : null}
                     <Button variant="ghost" size="sm" className="ml-auto" onClick={() => set({ dialogue: draft.dialogue.filter((_, i) => i !== index) })}>
                       <Trash2 aria-hidden />
-                      Quitar línea
+                      {t('Quitar línea')}
                     </Button>
                   </div>
                 </div>
@@ -366,15 +368,15 @@ export function PromptFormBuilder() {
                 }
               >
                 <Plus aria-hidden />
-                Añadir línea de diálogo
+                {t('Añadir línea de diálogo')}
               </Button>
             </section>
           ) : null}
 
-          <section aria-label="Vista previa del prompt" className="space-y-2 border-t border-white/[0.06] pt-4">
+          <section aria-label={t('Vista previa del prompt')} className="space-y-2 border-t border-white/[0.06] pt-4">
             {error ? (
               <p role="alert" className="rounded-xl border border-danger/35 bg-danger-soft/30 px-3 py-2 text-[12px] text-danger">
-                {error} Tu prompt actual no ha cambiado.
+                {error} {t('Tu prompt actual no ha cambiado.')}
               </p>
             ) : null}
             {preview ? (
@@ -384,7 +386,7 @@ export function PromptFormBuilder() {
                 </pre>
                 {stale ? (
                   <p role="status" className="text-[11px] text-warn">
-                    El formulario o los adjuntos cambiaron desde esta vista previa. Vuelve a generarla antes de aplicar.
+                    {t('El formulario o los adjuntos cambiaron desde esta vista previa. Vuelve a generarla antes de aplicar.')}
                   </p>
                 ) : null}
               </>
@@ -392,17 +394,17 @@ export function PromptFormBuilder() {
             <div className="flex flex-wrap items-center justify-end gap-2">
               <Button variant="outline" size="sm" loading={busy} disabled={problem !== null} onClick={() => void build()}>
                 <Eye aria-hidden />
-                Vista previa
+                {t('Vista previa')}
               </Button>
               <Button variant="ghost" size="sm" disabled={!preview || stale} onClick={() => preview && void copyText(preview.prompt)}>
                 <Clipboard aria-hidden />
-                Copiar
+                {t('Copiar')}
               </Button>
               <Button variant="primary" size="sm" disabled={!preview || stale} onClick={apply}>
-                Usar como prompt
+                {t('Usar como prompt')}
               </Button>
             </div>
-            <p className="text-right text-[10px] text-faint">Sustituye el prompt del compositor. No cambia la receta ni genera.</p>
+            <p className="text-right text-[10px] text-faint">{t('Sustituye el prompt del compositor. No cambia la receta ni genera.')}</p>
           </section>
         </div>
       </DialogPanel>

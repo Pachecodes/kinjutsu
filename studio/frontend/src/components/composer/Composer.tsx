@@ -4,6 +4,7 @@ import { useComposerRequest } from '../../hooks/useComposerRequest'
 import { generateGate, useGenerate } from '../../hooks/useGenerate'
 import { useValidation } from '../../hooks/queries'
 import { useIsDesktop } from '../../hooks/useMediaQuery'
+import { t, useT } from '../../i18n'
 import { BRAND } from '../../lib/brand'
 import { formatSeconds } from '../../lib/format'
 import { issuesIn, visibleIssues } from '../../lib/issues'
@@ -29,6 +30,7 @@ interface ComposerProps {
  * technical is one tap away in Advanced, never in the way.
  */
 export function Composer({ config, capabilities }: ComposerProps) {
+  useT()
   const request = useComposerRequest()
   const notice = useComposer((state) => state.notice)
   const isDesktop = useIsDesktop()
@@ -51,7 +53,7 @@ export function Composer({ config, capabilities }: ComposerProps) {
   )
 
   return (
-    <section aria-label="Compositor" className="shell flex min-w-0 flex-col gap-3 p-2.5 md:p-3">
+    <section aria-label={t('Compositor')} className="shell flex min-w-0 flex-col gap-3 p-2.5 md:p-3">
       <RecipeChecklist />
 
       {notice ? (
@@ -62,7 +64,7 @@ export function Composer({ config, capabilities }: ComposerProps) {
           <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
           <span className="flex-1">{notice}</span>
           <button type="button" className="font-semibold underline underline-offset-2" onClick={() => setNotice(null)}>
-            Entendido
+            {t('Entendido')}
           </button>
         </div>
       ) : null}
@@ -75,7 +77,7 @@ export function Composer({ config, capabilities }: ComposerProps) {
 
       {validation.data?.continuity_plan?.split ? (
         <p className="rounded-xl border border-accent/30 bg-accent/[0.07] px-3 py-2 text-[11px] leading-snug text-accent">
-          <span className="font-semibold">Plan de continuidad · </span>
+          <span className="font-semibold">{t('Plan de continuidad · ')}</span>
           {validation.data.continuity_plan.summary}
         </p>
       ) : null}
@@ -95,15 +97,15 @@ export function Composer({ config, capabilities }: ComposerProps) {
       <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2" data-tour="generate">
         <span className="tabular mr-auto flex items-center gap-1 text-[11px] text-faint">
           {validation.isFetching && !validation.data
-            ? 'Comprobando…'
+            ? t('Comprobando…')
             : estimate !== null
-              ? `≈ ${formatSeconds(estimate)} estimado`
-              : 'Sin estimación'}
+              ? t('≈ {time} estimado', { time: formatSeconds(estimate) })
+              : t('Sin estimación')}
           <InfoTip
-            label="Estimación"
+            label={t('Estimación')}
             help={{
-              what: `Estimación a partir de tiempos medidos en ${BRAND.machine}. No es un compromiso.`,
-              cost: 'Preparar referencias, renderizar y decodificar pueden durar muy distinto según la toma.',
+              what: t('Estimación a partir de tiempos medidos en {machine}. No es un compromiso.', { machine: BRAND.machine }),
+              cost: t('Preparar referencias, renderizar y decodificar pueden durar muy distinto según la toma.'),
               when: config.estimate_basis,
             }}
           />
@@ -115,14 +117,20 @@ export function Composer({ config, capabilities }: ComposerProps) {
           disabled={blockedReason !== null}
           onClick={() => void generate(request)}
           aria-describedby={blockedReason ? 'generate-blocked' : undefined}
-          aria-label={pending ? 'Enviando la toma' : `Generar toma${estimate !== null ? `, unos ${formatSeconds(estimate)} estimados` : ''}`}
+          aria-label={
+            pending
+              ? t('Enviando la toma')
+              : estimate !== null
+                ? t('Generar toma, unos {time} estimados', { time: formatSeconds(estimate) })
+                : t('Generar toma')
+          }
           className="min-w-[10rem] rounded-[13px]"
         >
           {pending ? (
-            'Enviando…'
+            t('Enviando…')
           ) : (
             <>
-              Generar
+              {t('Generar')}
               <Sparkles className="fill-current" aria-hidden />
             </>
           )}

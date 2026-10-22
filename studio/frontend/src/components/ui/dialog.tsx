@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { cn } from '../../lib/cn'
+import { t, useT } from '../../i18n'
 
 export const Dialog = DialogPrimitive.Root
 export const DialogTrigger = DialogPrimitive.Trigger
@@ -15,6 +16,7 @@ interface DialogPanelProps {
 }
 
 export function DialogPanel({ title, description, children, className }: DialogPanelProps) {
+  useT()
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink-950/80 backdrop-blur-sm data-[state=open]:animate-fade-in" />
@@ -39,7 +41,7 @@ export function DialogPanel({ title, description, children, className }: DialogP
           </div>
           <DialogPrimitive.Close
             className="rounded-lg p-1.5 text-faint transition-colors hover:bg-ink-800 hover:text-fg"
-            aria-label="Cerrar"
+            aria-label={t('Cerrar')}
           >
             <X className="size-4" aria-hidden />
           </DialogPrimitive.Close>

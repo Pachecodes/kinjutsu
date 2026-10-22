@@ -6,14 +6,16 @@ import { MODE_COPY } from '../../lib/curation'
 import { formatTimeOfDay } from '../../lib/format'
 import type { JobOut } from '../../lib/types'
 import { EmptyState, ErrorState, Skeleton } from '../ui/states'
+import { t, useT } from '../../i18n'
 
 /** Logs are deliberately secondary: the stage is the product, this explains it. */
 export function ActivityPanel({ job }: { job: JobOut | null }) {
+  useT()
   const active = job?.status === 'queued' || job?.status === 'running'
   const events = useJobEvents(job?.id ?? null, Boolean(active))
 
   if (!job) {
-    return <EmptyState compact icon={ScrollText} title="Ninguna toma seleccionada" body="Aquí aparece el registro de la toma." />
+    return <EmptyState compact icon={ScrollText} title={t('Ninguna toma seleccionada')} body={t('Aquí aparece el registro de la toma.')} />
   }
 
   if (events.isLoading) {
@@ -27,7 +29,7 @@ export function ActivityPanel({ job }: { job: JobOut | null }) {
   }
 
   if (events.isError) {
-    return <ErrorState message="No se pudo cargar la actividad de esta toma." onRetry={() => void events.refetch()} />
+    return <ErrorState message={t('No se pudo cargar la actividad de esta toma.')} onRetry={() => void events.refetch()} />
   }
 
   const items = events.data?.events ?? []
@@ -35,15 +37,15 @@ export function ActivityPanel({ job }: { job: JobOut | null }) {
   return (
     <div className="space-y-3">
       <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
-        <dt className="text-faint">Tarea</dt>
+        <dt className="text-faint">{t('Tarea')}</dt>
         <dd className="text-right text-muted">{MODE_COPY[job.mode].label}</dd>
-        <dt className="text-faint">Método</dt>
+        <dt className="text-faint">{t('Método')}</dt>
         <dd className="text-right text-muted">{job.method}</dd>
-        <dt className="text-faint">Semilla</dt>
+        <dt className="text-faint">{t('Semilla')}</dt>
         <dd className="tabular truncate text-right text-muted">{job.seed}</dd>
         {job.comfy_prompt_id ? (
           <>
-            <dt className="text-faint">Prompt de Comfy</dt>
+            <dt className="text-faint">{t('Prompt de Comfy')}</dt>
             <dd className="truncate text-right font-mono text-[10px] text-muted">{job.comfy_prompt_id}</dd>
           </>
         ) : null}
@@ -56,7 +58,7 @@ export function ActivityPanel({ job }: { job: JobOut | null }) {
       ) : null}
 
       {items.length === 0 ? (
-        <EmptyState compact icon={ScrollText} title="Sin actividad registrada" />
+        <EmptyState compact icon={ScrollText} title={t('Sin actividad registrada')} />
       ) : (
         <ol className="space-y-1">
           {items.map((event) => (

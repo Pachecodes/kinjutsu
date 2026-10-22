@@ -13,6 +13,7 @@ import { InfoTip } from '../ui/info-tip'
 import { Switch } from '../ui/switch'
 import { useToast } from '../ui/toast'
 import { OmniSetup } from '../composer/OmniSetup'
+import { t, useT } from '../../i18n'
 
 interface RecipeCardProps {
   preset: Preset
@@ -23,6 +24,7 @@ interface RecipeCardProps {
 }
 
 function RecipeCard({ preset, tier, active, comfyOnline, onApply }: RecipeCardProps) {
+  useT()
   const [open, setOpen] = useState(false)
   // Offline, availability is unknown rather than denied: loading a recipe is harmless.
   const omni = preset.patch.method === 'fast_h3_omni_8step'
@@ -57,32 +59,32 @@ function RecipeCard({ preset, tier, active, comfyOnline, onApply }: RecipeCardPr
             {preset.default || preset.id === APPROVED_SWAP_PRESET ? (
               <span className="inline-flex items-center gap-0.5 rounded-md bg-accent/15 px-1 py-px text-[9px] font-bold uppercase tracking-caps text-accent">
                 <BadgeCheck className="size-2.5" aria-hidden />
-                Aprobada
+                {t('Aprobada')}
               </span>
             ) : tier === 'recommended' ? (
               <span className="inline-flex items-center rounded-md border border-accent/30 px-1 py-px text-[9px] font-bold uppercase tracking-caps text-accent">
-                Recomendada
+                {t('Recomendada')}
               </span>
             ) : null}
             {tier === 'experimental' ? (
               <span className="inline-flex items-center gap-0.5 rounded-md border border-warn/40 px-1 text-[9px] font-bold uppercase tracking-caps text-warn">
                 <FlaskConical className="size-2.5" aria-hidden />
-                Experimental
+                {t('Experimental')}
               </span>
             ) : null}
           </span>
           <span className="mt-1 block text-[11px] leading-snug text-faint">{preset.blurb}</span>
           {blocked ? (
             <span className="mt-1 block text-[10px] leading-snug text-warn">
-              No disponible: {preset.unavailable_reason ?? 'falta una capacidad del runtime.'}
+              {t('No disponible: {reason}', { reason: preset.unavailable_reason ?? t('falta una capacidad del runtime.') })}
             </span>
           ) : null}
           <span className="mt-1.5 flex items-center gap-1 text-[10px] text-faint">
             <Timer className="size-3" aria-hidden />
             <span className="tabular">
               {preset.estimate_seconds === null
-                ? 'Sin medir en esta máquina'
-                : `≈ ${formatSeconds(preset.estimate_seconds)} estimado`}
+                ? t('Sin medir en esta máquina')
+                : t('≈ {time} estimado', { time: formatSeconds(preset.estimate_seconds) })}
             </span>
           </span>
         </button>
@@ -90,7 +92,7 @@ function RecipeCard({ preset, tier, active, comfyOnline, onApply }: RecipeCardPr
           type="button"
           aria-expanded={open}
           aria-controls={detailsId}
-          aria-label={`${open ? 'Ocultar' : 'Ver'} detalles de ${preset.label}`}
+          aria-label={open ? t('Ocultar detalles de {name}', { name: preset.label }) : t('Ver detalles de {name}', { name: preset.label })}
           onClick={() => setOpen(!open)}
           className="mr-1.5 mt-2 rounded-lg p-1.5 text-faint transition-colors hover:bg-white/[0.06] hover:text-fg"
         >
@@ -103,7 +105,7 @@ function RecipeCard({ preset, tier, active, comfyOnline, onApply }: RecipeCardPr
         <div id={detailsId} className="space-y-2 border-t border-white/[0.05] px-3 py-2.5">
           {preset.needs.length > 0 ? (
             <div>
-              <p className="eyebrow mb-1">Necesita</p>
+              <p className="eyebrow mb-1">{t('Necesita')}</p>
               <ul className="flex flex-wrap gap-1">
                 {preset.needs.map((need) => (
                   <li key={need} className="rounded-md border border-white/10 px-1.5 py-0.5 text-[10px] text-muted">
@@ -115,7 +117,7 @@ function RecipeCard({ preset, tier, active, comfyOnline, onApply }: RecipeCardPr
           ) : null}
           {preset.recipe.length > 0 ? (
             <div>
-              <p className="eyebrow mb-1">Receta</p>
+              <p className="eyebrow mb-1">{t('Receta')}</p>
               <ul className="space-y-0.5">
                 {preset.recipe.map((line) => (
                   <li key={line} className="text-[11px] leading-snug text-muted">
@@ -142,6 +144,7 @@ function RecipeCard({ preset, tier, active, comfyOnline, onApply }: RecipeCardPr
  * would replace the creator's prompt, it asks first.
  */
 export function RecipeList({ presets, comfyOnline, onApplied }: { presets: Preset[]; comfyOnline: boolean; onApplied?: () => void }) {
+  useT()
   const applyPreset = useComposer((state) => state.applyPreset)
   const presetId = useComposer((state) => state.presetId)
   const showExperimental = useUi((state) => state.showExperimental)
@@ -154,8 +157,8 @@ export function RecipeList({ presets, comfyOnline, onApplied }: { presets: Prese
     applyPreset(preset)
     setPending(null)
     toast({
-      title: `Receta cargada: ${preset.label}`,
-      description: 'No se ha generado nada. Revisa referencias y prompt; todo sigue editable.',
+      title: t('Receta cargada: {name}', { name: preset.label }),
+      description: t('No se ha generado nada. Revisa referencias y prompt; todo sigue editable.'),
       tone: 'success',
     })
     onApplied?.()
@@ -188,11 +191,11 @@ export function RecipeList({ presets, comfyOnline, onApplied }: { presets: Prese
   return (
     <div className="space-y-4" data-tour="recipes">
       <p className="flex items-start gap-1 px-1 text-[11px] leading-snug text-faint">
-        Una receta carga ajustes (y a veces un prompt). No genera; todo queda editable.
-        <InfoTip help={HELP.recipe} label="Recetas" />
+        {t('Una receta carga ajustes (y a veces un prompt). No genera; todo queda editable.')}
+        <InfoTip help={HELP.recipe} label={t('Recetas')} />
       </p>
-      {section('Recomendadas', curated.recommended)}
-      {section('Más recetas', curated.standard)}
+      {section(t('Recomendadas'), curated.recommended)}
+      {section(t('Más recetas'), curated.standard)}
 
       {curated.experimental.length > 0 ? (
         <section className="space-y-2 rounded-2xl border border-dashed border-white/10 p-2.5">
@@ -200,16 +203,16 @@ export function RecipeList({ presets, comfyOnline, onApplied }: { presets: Prese
             <span className="min-w-0">
               <span className="flex items-center gap-1.5 text-[12px] font-semibold text-fg">
                 <FlaskConical className="size-3.5 text-warn" aria-hidden />
-                Experimentales y legacy
+                {t('Experimentales y legacy')}
               </span>
               <span className="mt-0.5 block text-[11px] leading-snug text-faint">
-                {curated.experimental.length} recetas sin validar en esta 4090 o sustituidas por otra receta.
+                {t('{n} recetas sin validar en esta 4090 o sustituidas por otra receta.', { n: curated.experimental.length })}
               </span>
             </span>
             <Switch
               checked={showExperimental}
               onCheckedChange={setShowExperimental}
-              aria-label="Mostrar recetas experimentales y legacy"
+              aria-label={t('Mostrar recetas experimentales y legacy')}
             />
           </label>
           {showExperimental ? (
@@ -232,18 +235,17 @@ export function RecipeList({ presets, comfyOnline, onApplied }: { presets: Prese
       <ConfirmDialog
         open={pending !== null}
         onOpenChange={(open) => !open && setPending(null)}
-        title="¿Sustituir tu prompt?"
+        title={t('¿Sustituir tu prompt?')}
         description={
           <>
             <span className="block">
-              «{pending?.label}» trae su propio prompt y sustituirá el que escribiste. También cambian duración, tamaño y
-              ajustes de la receta.
+              {t('«{name}» trae su propio prompt y sustituirá el que escribiste. También cambian duración, tamaño y ajustes de la receta.', { name: pending?.label ?? '' })}
             </span>
-            <span className="mt-2 block text-xs text-faint">No se genera nada. Copia tu prompt antes si quieres conservarlo.</span>
+            <span className="mt-2 block text-xs text-faint">{t('No se genera nada. Copia tu prompt antes si quieres conservarlo.')}</span>
           </>
         }
-        confirmLabel="Cargar receta"
-        cancelLabel="Mantener mi prompt"
+        confirmLabel={t('Cargar receta')}
+        cancelLabel={t('Mantener mi prompt')}
         destructive={false}
         onConfirm={() => pending && load(pending)}
       />

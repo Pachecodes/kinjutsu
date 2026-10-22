@@ -1,3 +1,4 @@
+import { localizedList, t } from '../i18n'
 /**
  * Deterministic prompt template.
  *
@@ -14,29 +15,29 @@ export interface ShotOption {
   text: string
 }
 
-export const CAMERA_OPTIONS: ShotOption[] = [
-  { id: 'static', label: 'Plano fijo', text: 'static locked-off camera' },
-  { id: 'push', label: 'Acercamiento lento', text: 'slow push-in' },
-  { id: 'pull', label: 'Alejamiento lento', text: 'slow pull-back' },
-  { id: 'tracking', label: 'Travelling lateral', text: 'smooth lateral tracking shot' },
-  { id: 'handheld', label: 'Cámara en mano', text: 'subtle handheld camera movement' },
-  { id: 'orbit', label: 'Órbita', text: 'slow orbit around the subject' },
-  { id: 'closeup', label: 'Primer plano', text: 'close-up framing' },
-  { id: 'medium', label: 'Plano medio', text: 'medium shot' },
-  { id: 'wide', label: 'Plano general', text: 'wide establishing shot' },
-  { id: 'low', label: 'Contrapicado', text: 'low-angle shot' },
-]
+export const CAMERA_OPTIONS: ShotOption[] = localizedList(() => [
+  { id: 'static', label: t('Plano fijo'), text: 'static locked-off camera' },
+  { id: 'push', label: t('Acercamiento lento'), text: 'slow push-in' },
+  { id: 'pull', label: t('Alejamiento lento'), text: 'slow pull-back' },
+  { id: 'tracking', label: t('Travelling lateral'), text: 'smooth lateral tracking shot' },
+  { id: 'handheld', label: t('Cámara en mano'), text: 'subtle handheld camera movement' },
+  { id: 'orbit', label: t('Órbita'), text: 'slow orbit around the subject' },
+  { id: 'closeup', label: t('Primer plano'), text: 'close-up framing' },
+  { id: 'medium', label: t('Plano medio'), text: 'medium shot' },
+  { id: 'wide', label: t('Plano general'), text: 'wide establishing shot' },
+  { id: 'low', label: t('Contrapicado'), text: 'low-angle shot' },
+])
 
-export const LIGHT_OPTIONS: ShotOption[] = [
-  { id: 'golden', label: 'Hora dorada', text: 'warm golden-hour sunlight' },
-  { id: 'daylight', label: 'Luz de día suave', text: 'soft natural daylight' },
-  { id: 'overcast', label: 'Nublado', text: 'diffused overcast light' },
-  { id: 'night', label: 'Noche con neones', text: 'night scene lit by neon signs' },
-  { id: 'lowkey', label: 'Contraste dramático', text: 'moody low-key lighting with deep shadows' },
-  { id: 'practical', label: 'Luces cálidas de interior', text: 'warm practical interior lights' },
-  { id: 'studio', label: 'Estudio', text: 'clean studio softbox lighting' },
-  { id: 'film', label: 'Look de cine', text: 'cinematic film look, natural grain' },
-]
+export const LIGHT_OPTIONS: ShotOption[] = localizedList(() => [
+  { id: 'golden', label: t('Hora dorada'), text: 'warm golden-hour sunlight' },
+  { id: 'daylight', label: t('Luz de día suave'), text: 'soft natural daylight' },
+  { id: 'overcast', label: t('Nublado'), text: 'diffused overcast light' },
+  { id: 'night', label: t('Noche con neones'), text: 'night scene lit by neon signs' },
+  { id: 'lowkey', label: t('Contraste dramático'), text: 'moody low-key lighting with deep shadows' },
+  { id: 'practical', label: t('Luces cálidas de interior'), text: 'warm practical interior lights' },
+  { id: 'studio', label: t('Estudio'), text: 'clean studio softbox lighting' },
+  { id: 'film', label: t('Look de cine'), text: 'cinematic film look, natural grain' },
+])
 
 export interface PromptFields {
   subject: string

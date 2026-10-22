@@ -1,6 +1,7 @@
 import { Check, FlaskConical } from 'lucide-react'
 import { useState } from 'react'
 
+import { t, useT } from '../../i18n'
 import { BRAND } from '../../lib/brand'
 import { cn } from '../../lib/cn'
 import { formatSeconds } from '../../lib/format'
@@ -15,6 +16,7 @@ import { OmniSetup } from './OmniSetup'
  * `comfyOnline` false means availability is unconfirmed, not denied.
  */
 export function MethodPicker({ methods, comfyOnline = true }: { methods: MethodInfo[]; comfyOnline?: boolean }) {
+  useT()
   const method = useComposer((state) => state.method)
   const mode = useComposer((state) => state.mode)
   const setMethod = useComposer((state) => state.setMethod)
@@ -26,7 +28,7 @@ export function MethodPicker({ methods, comfyOnline = true }: { methods: MethodI
 
   return (
     <div className="space-y-2">
-      <div role="radiogroup" aria-label="Método" className="space-y-1">
+      <div role="radiogroup" aria-label={t('Método')} className="space-y-1">
         {visible.map((info) => {
           const active = method === info.id
           const blocked = methodModeBlock(info.id, mode)
@@ -61,12 +63,12 @@ export function MethodPicker({ methods, comfyOnline = true }: { methods: MethodI
                   {info.experimental ? (
                     <span className="inline-flex items-center gap-0.5 rounded-md border border-warn/40 px-1 text-[9px] font-bold uppercase tracking-caps text-warn">
                       <FlaskConical className="size-2.5" aria-hidden />
-                      Experimental
+                      {t('Experimental')}
                     </span>
                   ) : null}
                   {info.measured_seconds !== null ? (
                     <span className="tabular rounded-md bg-white/[0.06] px-1 text-[10px] text-muted">
-                      {formatSeconds(info.measured_seconds)} medido
+                      {t('{time} medido', { time: formatSeconds(info.measured_seconds) })}
                     </span>
                   ) : null}
                   {info.measured_ssim !== null ? (
@@ -95,11 +97,14 @@ export function MethodPicker({ methods, comfyOnline = true }: { methods: MethodI
           className="flex min-h-8 w-full items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-semibold text-faint hover:text-fg"
         >
           <FlaskConical className="size-3.5" aria-hidden />
-          {showExperimental ? 'Ocultar métodos experimentales' : `Mostrar ${hiddenCount} métodos experimentales`}
+          {showExperimental ? t('Ocultar métodos experimentales') : t('Mostrar {n} métodos experimentales', { n: hiddenCount })}
         </button>
       ) : null}
       <p className="px-2.5 text-[10px] leading-snug text-faint">
-        Perfiles clásicos medidos en {BRAND.machine} (608×352, 5 s). Omni tiene ejemplos independientes de una imagen y 5,17 s: 86–123 s con motor caliente en RTX 4090. No es una garantía de velocidad ni HD.
+        {t(
+          'Perfiles clásicos medidos en {machine} (608×352, 5 s). Omni tiene ejemplos independientes de una imagen y 5,17 s: 86–123 s con motor caliente en RTX 4090. No es una garantía de velocidad ni HD.',
+          { machine: BRAND.machine },
+        )}
       </p>
     </div>
   )

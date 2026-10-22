@@ -32,6 +32,7 @@ import type {
   SolOptions,
   WeightVariant,
 } from '../lib/types'
+import { t } from '../i18n'
 
 export const EASYCACHE_DEFAULTS: EasyCacheOptions = {
   reuse_threshold: 0.3,
@@ -249,10 +250,10 @@ export const useComposer = create<ComposerStore>((set, get) => ({
             : state.weights === 'gguf_q3km' || state.weights === 'erosmax_beta4' ? 'int8' : state.weights,
         notice: [
           dropped.length > 0
-            ? `${dropped.length === 1 ? 'Se quitó 1 referencia' : `Se quitaron ${dropped.length} referencias`}: esta tarea no la${dropped.length > 1 ? 's' : ''} admite.`
+            ? (dropped.length === 1 ? t('Se quitó 1 referencia: esta tarea no la admite.') : t('Se quitaron {n} referencias: esta tarea no las admite.', { n: dropped.length }))
             : null,
           removedLoras > 0
-            ? `${removedLoras === 1 ? 'Se quitó 1 LoRA' : `Se quitaron ${removedLoras} LoRAs`}: cambió la familia del checkpoint.`
+            ? (removedLoras === 1 ? t('Se quitó 1 LoRA: cambió la familia del checkpoint.') : t('Se quitaron {n} LoRAs: cambió la familia del checkpoint.', { n: removedLoras }))
             : null,
         ].filter(Boolean).join(' ') || null,
       }
@@ -279,7 +280,7 @@ export const useComposer = create<ComposerStore>((set, get) => ({
             ...sceneCanvas(512, 640, state.references),
             references: omniReferences(state.references),
             prompt: state.prompt.trimStart().startsWith('body_swap:') ? '' : state.prompt,
-            notice: 'Escenas Omni: sin LoRAs ni guía alineada. Se retiraron ajustes incompatibles; revisa referencias y prompt.',
+            notice: t('Escenas Omni: sin LoRAs ni guía alineada. Se retiraron ajustes incompatibles; revisa referencias y prompt.'),
           }
         : method === 'ref2va_vsa'
         ? {
@@ -329,7 +330,7 @@ export const useComposer = create<ComposerStore>((set, get) => ({
     const state = get()
     const decision = canAccept(state.mode, state.references, asset.kind)
     if (!decision.ok || !decision.role) {
-      set({ notice: decision.reason ?? 'Esa referencia no encaja en esta tarea.' })
+      set({ notice: decision.reason ?? t('Esa referencia no encaja en esta tarea.') })
       return false
     }
     const shouldMatchRatio =
@@ -440,9 +441,9 @@ export const useComposer = create<ComposerStore>((set, get) => ({
         } : {}),
         notice:
           omni && state.references.some((slot) => slot.role === 'aligned_guide')
-            ? 'Se quitó la guía alineada: Escenas Omni no usa el contrato Character Swap.'
+            ? t('Se quitó la guía alineada: Escenas Omni no usa el contrato Character Swap.')
             : dropped.length > 0
-            ? `${dropped.length === 1 ? 'Se quitó 1 referencia' : `Se quitaron ${dropped.length} referencias`}: esta tarea no la${dropped.length > 1 ? 's' : ''} admite.`
+            ? (dropped.length === 1 ? t('Se quitó 1 referencia: esta tarea no la admite.') : t('Se quitaron {n} referencias: esta tarea no las admite.', { n: dropped.length }))
             : null,
       }
     }),
@@ -490,7 +491,7 @@ export const useComposer = create<ComposerStore>((set, get) => ({
       ...(request.method === OMNI ? { ...omniCore(), auto_ratio: true, references: omniReferences(references), presetId: request.preset_id === OMNI_PRESET ? OMNI_PRESET : null } : {}),
       notice:
         missing > 0
-          ? `${missing === 1 ? '1 referencia ya no está' : `${missing} referencias ya no están`} en la biblioteca y no se pudo restaurar.`
+          ? (missing === 1 ? t('1 referencia ya no está en la biblioteca y no se pudo restaurar.') : t('{n} referencias ya no están en la biblioteca y no se pudieron restaurar.', { n: missing }))
           : null,
     })
     return { missing }

@@ -6,6 +6,7 @@ import { cn } from '../../lib/cn'
 import { useUi } from '../../state/ui'
 import { Button } from '../ui/button'
 import { TOUR_STEPS } from './steps'
+import { t, useT } from '../../i18n'
 
 interface Box {
   top: number
@@ -52,6 +53,7 @@ function cardPosition(box: Box | null): React.CSSProperties {
  * remembered so it is never forced again.
  */
 export function Tour() {
+  useT()
   const step = useUi((state) => state.tourStep)
   const setTourStep = useUi((state) => state.setTourStep)
   const closeTour = useUi((state) => state.closeTour)
@@ -150,7 +152,7 @@ export function Tour() {
           <Compass className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
           <div className="min-w-0 flex-1">
             <p className="eyebrow">
-              Guía · paso {step + 1} de {TOUR_STEPS.length}
+              {t('Guía · paso {n} de {total}', { n: step + 1, total: TOUR_STEPS.length })}
             </p>
             <h2 id={titleId} className="display-title mt-0.5 text-[15px] text-fg">
               {current.title}
@@ -159,7 +161,7 @@ export function Tour() {
           <button
             type="button"
             onClick={closeTour}
-            aria-label="Salir del recorrido"
+            aria-label={t('Salir del recorrido')}
             className="flex size-9 shrink-0 items-center justify-center rounded-xl text-faint hover:bg-white/[0.06] hover:text-fg"
           >
             <X className="size-4" aria-hidden />
@@ -182,11 +184,11 @@ export function Tour() {
           {step > 0 ? (
             <Button variant="ghost" size="sm" onClick={() => setTourStep(step - 1)}>
               <ArrowLeft aria-hidden />
-              Anterior
+              {t('Anterior')}
             </Button>
           ) : null}
           <Button variant="primary" size="sm" onClick={() => (last ? closeTour() : setTourStep(step + 1))}>
-            {last ? 'Terminar' : 'Siguiente'}
+            {last ? t('Terminar') : t('Siguiente')}
             {last ? null : <ArrowRight aria-hidden />}
           </Button>
         </div>
@@ -197,6 +199,7 @@ export function Tour() {
 
 /** First-visit offer: one quiet card, never a blocking modal, remembered once dismissed. */
 export function TourOffer({ className }: { className?: string }) {
+  useT()
   const tourDone = useUi((state) => state.tourDone)
   const tourStep = useUi((state) => state.tourStep)
   const openTour = useUi((state) => state.openTour)
@@ -204,22 +207,22 @@ export function TourOffer({ className }: { className?: string }) {
   if (tourDone || tourStep !== null) return null
   return (
     <aside
-      aria-label="Recorrido guiado"
+      aria-label={t('Recorrido guiado')}
       className={cn('rounded-2xl border border-accent/25 bg-accent/[0.06] p-3', className)}
     >
       <p className="flex items-center gap-1.5 text-[12px] font-semibold text-fg">
         <Compass className="size-3.5 text-accent" aria-hidden />
-        ¿Primera vez aquí?
+        {t('¿Primera vez aquí?')}
       </p>
       <p className="mt-1 text-[11px] leading-snug text-muted">
-        Un recorrido corto por la ruta completa, de la receta a la descarga. No genera ni descarga nada.
+        {t('Un recorrido corto por la ruta completa, de la receta a la descarga. No genera ni descarga nada.')}
       </p>
       <div className="mt-2 flex gap-1.5">
         <Button variant="primary" size="sm" onClick={() => openTour(0)}>
-          Empezar
+          {t('Empezar')}
         </Button>
         <Button variant="ghost" size="sm" onClick={closeTour}>
-          Ahora no
+          {t('Ahora no')}
         </Button>
       </div>
     </aside>

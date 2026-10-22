@@ -21,8 +21,9 @@ import { EmptyState } from '../ui/states'
 import { GuideSync } from './GuideSync'
 import { LibraryDialog } from './LibraryDialog'
 import { ReferenceCard } from './ReferenceCard'
+import { localized, t, useT } from '../../i18n'
 
-const KIND_WORD: Record<RefKind, string> = { image: 'imágenes', video: 'vídeos', audio: 'audios' }
+const KIND_WORD: Record<RefKind, string> = localized(() => ({ image: t('imágenes'), video: t('vídeos'), audio: t('audios') }))
 
 function CountPill({ label, used, max }: { label: string; used: number; max: number }) {
   return (
@@ -43,6 +44,7 @@ function CountPill({ label, used, max }: { label: string; used: number; max: num
  * where a creator fine-tunes what each file contributes.
  */
 export function ReferencesPanel({ config }: { config: StudioConfig }) {
+  useT()
   const mode = useComposer((state) => state.mode)
   const references = useComposer((state) => state.references)
   const clearReferences = useComposer((state) => state.clearReferences)
@@ -61,8 +63,8 @@ export function ReferencesPanel({ config }: { config: StudioConfig }) {
     return (
       <EmptyState
         icon={Layers}
-        title="Esta tarea no usa referencias"
-        body={`${MODE_COPY[mode].label} genera solo desde el prompt. Cambia a Animar una imagen, Referencias o Performance para añadir archivos.`}
+        title={t('Esta tarea no usa referencias')}
+        body={t('{mode} genera solo desde el prompt. Cambia a Animar una imagen, Referencias o Performance para añadir archivos.', { mode: MODE_COPY[mode].label })}
       />
     )
   }
@@ -104,7 +106,7 @@ export function ReferencesPanel({ config }: { config: StudioConfig }) {
           multiple
           accept={kinds.map((kind) => ACCEPT_BY_KIND[kind]).join(',')}
           className="sr-only"
-          aria-label="Añadir archivos de referencia"
+          aria-label={t('Añadir archivos de referencia')}
           onChange={(event) => {
             if (event.target.files?.length) void ingest(event.target.files)
             event.target.value = ''
@@ -114,7 +116,7 @@ export function ReferencesPanel({ config }: { config: StudioConfig }) {
           <div className="space-y-1.5" role="status">
             <p className="flex items-center justify-center gap-2 text-[11px] text-muted">
               <Loader2 className="size-3.5 animate-spin" aria-hidden />
-              <span className="truncate">Subiendo {progress.name}</span>
+              <span className="truncate">{t('Subiendo {name}', { name: progress.name })}</span>
             </p>
             <div className="h-1 overflow-hidden rounded-full bg-ink-700">
               <div
@@ -127,18 +129,21 @@ export function ReferencesPanel({ config }: { config: StudioConfig }) {
           <>
             <Upload className="mx-auto size-4 text-faint" aria-hidden />
             <p className="mt-1 text-[11px] text-muted">
-              Suelta {kinds.map((kind) => KIND_WORD[kind]).join(', ')} aquí o{' '}
+              {t('Suelta {kinds} aquí o', { kinds: kinds.map((kind) => KIND_WORD[kind]).join(', ') })}{' '}
               <button
                 type="button"
                 className="font-semibold text-accent underline underline-offset-2"
                 onClick={() => inputRef.current?.click()}
               >
-                elige archivos
+                {t('elige archivos')}
               </button>
             </p>
             <p className="mt-0.5 text-[10px] text-faint">
-              Hasta {config.upload_limits.image_mb} MB imagen · {config.upload_limits.video_mb} MB vídeo ·{' '}
-              {config.upload_limits.audio_mb} MB audio. Los originales nunca se modifican.
+              {t('Hasta {image} MB imagen · {video} MB vídeo · {audio} MB audio. Los originales nunca se modifican.', {
+                image: config.upload_limits.image_mb,
+                video: config.upload_limits.video_mb,
+                audio: config.upload_limits.audio_mb,
+              })}
             </p>
           </>
         )}
@@ -148,7 +153,7 @@ export function ReferencesPanel({ config }: { config: StudioConfig }) {
         <LibraryDialog kinds={kinds} />
         {references.length > 0 ? (
           <Button variant="ghost" size="sm" onClick={clearReferences} className="ml-auto">
-            Quitar todas de la toma
+            {t('Quitar todas de la toma')}
           </Button>
         ) : null}
       </div>
@@ -159,15 +164,15 @@ export function ReferencesPanel({ config }: { config: StudioConfig }) {
         <EmptyState
           compact
           icon={ImagePlus}
-          title="Aún no hay referencias"
+          title={t('Aún no hay referencias')}
           body={
             mode === 'performance'
-              ? 'Performance necesita un retrato de identidad y un clip de movimiento.'
+              ? t('Performance necesita un retrato de identidad y un clip de movimiento.')
               : mode === 'first_last'
-                ? 'Añade la imagen inicial y después la final.'
+                ? t('Añade la imagen inicial y después la final.')
                 : mode === 'first_frame'
-                  ? 'Añade la imagen con la que abre la toma.'
-                  : 'Hasta 9 imágenes, 3 clips y 3 audios. El orden define la numeración <Picture i>.'
+                  ? t('Añade la imagen con la que abre la toma.')
+                  : t('Hasta 9 imágenes, 3 clips y 3 audios. El orden define la numeración <Picture i>.')
           }
         />
       ) : (

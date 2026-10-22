@@ -1,3 +1,4 @@
+import { getLocale, t } from '../i18n'
 /** Small display formatters. Nothing here invents a metric the API did not send. */
 
 export function formatSeconds(seconds: number | null | undefined): string {
@@ -41,17 +42,17 @@ export function formatRelative(value: string | null | undefined, now: Date = new
   const date = parseTimestamp(value)
   if (!date) return '—'
   const delta = Math.round((now.getTime() - date.getTime()) / 1000)
-  if (delta < 45) return 'ahora'
-  if (delta < 3600) return `hace ${Math.round(delta / 60)} min`
-  if (delta < 86_400) return `hace ${Math.round(delta / 3600)} h`
-  if (delta < 7 * 86_400) return `hace ${Math.round(delta / 86_400)} d`
-  return date.toLocaleDateString('es', { month: 'short', day: 'numeric' })
+  if (delta < 45) return t('ahora')
+  if (delta < 3600) return t('hace {n} min', { n: Math.round(delta / 60) })
+  if (delta < 86_400) return t('hace {n} h', { n: Math.round(delta / 3600) })
+  if (delta < 7 * 86_400) return t('hace {n} d', { n: Math.round(delta / 86_400) })
+  return date.toLocaleDateString(getLocale(), { month: 'short', day: 'numeric' })
 }
 
 export function formatTimeOfDay(value: string | null | undefined): string {
   const date = parseTimestamp(value)
   if (!date) return '—'
-  return date.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return date.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 export function elapsedSeconds(startedAt: string | null, now: number): number | null {

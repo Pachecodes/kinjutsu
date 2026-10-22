@@ -8,8 +8,10 @@ import { useComposer } from '../../state/composer'
 import { Button } from '../ui/button'
 import { InfoTip } from '../ui/info-tip'
 import { PrepareGuide } from './PrepareGuide'
+import { t, useT } from '../../i18n'
 
 function Spec({ label, width, height, frames, seconds }: { label: string; width: number; height: number; frames: number | null; seconds: number | null }) {
+  useT()
   return (
     <div className="min-w-0">
       <dt className="eyebrow">{label}</dt>
@@ -17,7 +19,7 @@ function Spec({ label, width, height, frames, seconds }: { label: string; width:
         {width}×{height}
         <span className="font-normal text-muted">
           {' · '}
-          {frames === null ? '¿? frames' : `${frames} frames`} · {formatSecondsEs(seconds)}
+          {frames === null ? t('¿? frames') : t('{n} frames', { n: frames })} · {formatSecondsEs(seconds)}
         </span>
       </dd>
     </div>
@@ -25,23 +27,26 @@ function Spec({ label, width, height, frames, seconds }: { label: string; width:
 }
 
 function Coverage({ status }: { status: GuideStatus }) {
+  useT()
   if (!status.coverage) {
     return (
       <p className="text-[11px] leading-snug text-faint">
-        Sin procedencia guardada: si este vídeo es el original, «Preparar guía» lo convierte. Si es una guía antigua, añade
-        su original desde la Biblioteca una vez; no se adivinan enlaces por nombre.
+        {t('Sin procedencia guardada: si este vídeo es el original, «Preparar guía» lo convierte. Si es una guía antigua, añade su original desde la Biblioteca una vez; no se adivinan enlaces por nombre.')}
       </p>
     )
   }
   const { coverage } = status
   return (
     <p className="text-[11px] leading-snug text-muted">
-      Cobertura real: usa {formatSecondsEs(coverage.start)}–{formatSecondsEs(coverage.end)} de un original de{' '}
-      {formatSecondsEs(coverage.sourceSeconds)}
+      {t('Cobertura real: usa {start}–{end} de un original de {source}', {
+        start: formatSecondsEs(coverage.start),
+        end: formatSecondsEs(coverage.end),
+        source: formatSecondsEs(coverage.sourceSeconds),
+      })}
       {coverage.excerpt ? (
-        <span className="text-warn"> · es un fragmento: quedan {formatSecondsEs(coverage.tailSeconds)} sin usar.</span>
+        <span className="text-warn">{t(' · es un fragmento: quedan {seconds} sin usar.', { seconds: formatSecondsEs(coverage.tailSeconds) })}</span>
       ) : (
-        <span> · usa el original completo.</span>
+        <span>{t(' · usa el original completo.')}</span>
       )}
     </p>
   )
@@ -53,6 +58,7 @@ function Coverage({ status }: { status: GuideStatus }) {
  * mismatch always comes with the two ways out instead of a backend error later.
  */
 export function GuideSync({ compact = false }: { compact?: boolean }) {
+  useT()
   const width = useComposer((state) => state.width)
   const height = useComposer((state) => state.height)
   const length = useComposer((state) => state.length)
@@ -74,7 +80,7 @@ export function GuideSync({ compact = false }: { compact?: boolean }) {
 
   return (
     <section
-      aria-label="Guía alineada"
+      aria-label={t('Guía alineada')}
       data-tour="guide-sync"
       className={cn(
         'rounded-2xl border px-3 py-2.5',
@@ -90,20 +96,20 @@ export function GuideSync({ compact = false }: { compact?: boolean }) {
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-center gap-1.5">
             <p className="text-[12px] font-semibold text-fg">
-              {status.ok ? 'Guía alineada con la salida' : 'La guía no coincide con la salida'}
+              {status.ok ? t('Guía alineada con la salida') : t('La guía no coincide con la salida')}
             </p>
-            <InfoTip help={HELP.prepareGuide} label="Preparar guía" />
+            <InfoTip help={HELP.prepareGuide} label={t('Preparar guía')} />
           </div>
 
           {!compact ? (
             <dl className="grid grid-cols-1 gap-2 rounded-xl bg-ink-950/50 px-2.5 py-2 sm:grid-cols-2">
-              <Spec label="Salida" width={status.output.width} height={status.output.height} frames={status.output.frames} seconds={status.output.seconds} />
+              <Spec label={t('Salida')} width={status.output.width} height={status.output.height} frames={status.output.frames} seconds={status.output.seconds} />
               {status.guide ? (
-                <Spec label="Guía" width={status.guide.width} height={status.guide.height} frames={status.guide.frames} seconds={status.guide.seconds} />
+                <Spec label={t('Guía')} width={status.guide.width} height={status.guide.height} frames={status.guide.frames} seconds={status.guide.seconds} />
               ) : (
                 <div>
-                  <dt className="eyebrow">Guía</dt>
-                  <dd className="mt-0.5 text-[12px] text-warn">Tamaño ilegible</dd>
+                  <dt className="eyebrow">{t('Guía')}</dt>
+                  <dd className="mt-0.5 text-[12px] text-warn">{t('Tamaño ilegible')}</dd>
                 </div>
               )}
             </dl>
@@ -113,14 +119,12 @@ export function GuideSync({ compact = false }: { compact?: boolean }) {
           <Coverage status={status} />
           {status.originalCoversOutput === false && !status.framesMatch ? (
             <p className="text-[11px] leading-snug text-warn">
-              El original no alcanza {formatSecondsEs(status.output.seconds)} desde el inicio guardado. Reduce la duración,
-              adelanta el inicio o usa un vídeo más largo; no se congela ni se repite el final.
+              {t('El original no alcanza {seconds} desde el inicio guardado. Reduce la duración, adelanta el inicio o usa un vídeo más largo; no se congela ni se repite el final.', { seconds: formatSecondsEs(status.output.seconds) })}
             </p>
           ) : null}
           {outsideTrained ? (
             <p className="text-[11px] leading-snug text-warn">
-              {length} frames está fuera de la ventana entrenada ({TRAINED_FRAME_MIN}–{TRAINED_FRAME_MAX}). Se puede preparar,
-              pero el render a esa duración es experimental y puede ser muy lento en la 4090.
+              {t('{n} frames está fuera de la ventana entrenada ({min}–{max}). Se puede preparar, pero el render a esa duración es experimental y puede ser muy lento en la 4090.', { n: length, min: TRAINED_FRAME_MIN, max: TRAINED_FRAME_MAX })}
             </p>
           ) : null}
 
@@ -128,13 +132,13 @@ export function GuideSync({ compact = false }: { compact?: boolean }) {
             {!status.ok && status.canFollowGuide && status.guide ? (
               <Button variant="primary" size="sm" onClick={followGuide}>
                 <Film aria-hidden />
-                Ajustar salida a la guía · {status.guide.frames} f · {formatSecondsEs(status.guide.seconds)}
+                {t('Ajustar salida a la guía · {frames} f · {seconds}', { frames: status.guide.frames ?? '', seconds: formatSecondsEs(status.guide.seconds) })}
               </Button>
             ) : null}
             <PrepareGuide
               slot={slot}
               triggerLabel={
-                status.ok ? 'Cambiar duración o encuadre' : `Preparar guía de ${formatSecondsEs(status.output.seconds)}`
+                status.ok ? t('Cambiar duración o encuadre') : t('Preparar guía de {seconds}', { seconds: formatSecondsEs(status.output.seconds) })
               }
               triggerVariant={status.ok || status.canFollowGuide ? 'outline' : 'primary'}
             />

@@ -1,6 +1,7 @@
 import { Clapperboard, Film, Image as ImageIcon, Layers, Type } from 'lucide-react'
 import { useRef, type ComponentType, type KeyboardEvent } from 'react'
 
+import { t, useT } from '../../i18n'
 import { MODE_COPY } from '../../lib/curation'
 import { cn } from '../../lib/cn'
 import type { Mode, ModeInfo } from '../../lib/types'
@@ -21,6 +22,7 @@ const MODE_ICON: Record<Mode, ComponentType<{ className?: string }>> = {
  * offline availability is unknown, so tasks stay selectable for composing.
  */
 export function ModeSwitch({ modes, comfyOnline, className }: { modes: ModeInfo[]; comfyOnline: boolean; className?: string }) {
+  useT()
   const mode = useComposer((state) => state.mode)
   const setMode = useComposer((state) => state.setMode)
   const refs = useRef<(HTMLButtonElement | null)[]>([])
@@ -51,7 +53,7 @@ export function ModeSwitch({ modes, comfyOnline, className }: { modes: ModeInfo[
   return (
     <div
       role="radiogroup"
-      aria-label="Tarea"
+      aria-label={t('Tarea')}
       data-tour="mode-switch"
       onKeyDown={onKeyDown}
       className={cn(
@@ -72,7 +74,7 @@ export function ModeSwitch({ modes, comfyOnline, className }: { modes: ModeInfo[
                 <span className="block text-muted">{copy.blurb}</span>
                 {!info.available ? (
                   <span className="block text-warn">
-                    {comfyOnline ? info.unavailable_reason : 'Disponibilidad sin confirmar: H3 Lab está desconectado.'}
+                    {comfyOnline ? info.unavailable_reason : t('Disponibilidad sin confirmar: H3 Lab está desconectado.')}
                   </span>
                 ) : null}
               </span>

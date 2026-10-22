@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react'
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
 import { cn } from '../../lib/cn'
+import { t, useT } from '../../i18n'
 
 export type ToastTone = 'info' | 'success' | 'error'
 
@@ -34,6 +35,7 @@ const TONE_CLASS = {
 let toastId = 0
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  useT()
   const [items, setItems] = useState<ToastRecord[]>([])
 
   const toast = useCallback<ToastApi['toast']>(({ title, description, tone = 'info' }) => {
@@ -45,7 +47,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   return (
     <ToastContext.Provider value={api}>
-      <ToastPrimitive.Provider swipeDirection="right" duration={6000}>
+      <ToastPrimitive.Provider swipeDirection="right" duration={6000} label={t('Notificación')}>
         {children}
         {items.map((item) => {
           const Icon = TONE_ICON[item.tone]
@@ -71,7 +73,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               </div>
               <ToastPrimitive.Close
                 className="rounded p-0.5 text-faint transition-colors hover:text-fg"
-                aria-label="Cerrar aviso"
+                aria-label={t('Cerrar aviso')}
               >
                 <X className="size-3.5" aria-hidden />
               </ToastPrimitive.Close>
@@ -79,6 +81,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           )
         })}
         <ToastPrimitive.Viewport
+          label={t('Avisos ({hotkey})')}
           className={cn(
             'pointer-events-none fixed bottom-16 right-0 z-[60] flex w-[min(22rem,calc(100vw-1.5rem))] lg:bottom-0',
             'flex-col gap-2 p-3 safe-pb',

@@ -8,6 +8,7 @@
  */
 
 import type { Issue, Severity } from './types'
+import { localized, t } from '../i18n'
 
 export type IssueArea = 'references' | 'prompt' | 'duration' | 'frame' | 'method' | 'advanced' | 'general'
 
@@ -65,34 +66,34 @@ export interface IssueGuidance {
   pending?: boolean
 }
 
-const GUIDANCE: Record<string, IssueGuidance> = {
+const GUIDANCE: Record<string, IssueGuidance> = localized(() => ({
   // The guide card beside the tray already explains this with both numbers and both fixes.
-  guide_alignment: { headline: 'La guía no coincide con la salida.', pending: true },
-  guide_metadata_missing: { headline: 'No se pudo certificar la guía (fps variables o metadatos ilegibles).' },
-  guide_continuity: { headline: 'Una guía alineada necesita la continuidad automática apagada.', fix: 'disable_continuity' },
-  guide_recipe: { headline: 'La guía alineada solo funciona con Quality y el checkpoint Default (INT8).', fix: 'guide_recipe' },
-  guide_audio_unsupported: { headline: 'La guía alineada va sin sonido.', fix: 'mute_guide' },
-  guide_mode: { headline: 'Las guías alineadas requieren la tarea Referencias y una sola guía.', fix: 'open_references' },
-  guide_unavailable: { headline: 'El runtime de H3 no tiene los nodos de guía disponibles ahora mismo.' },
-  character_swap_guide_required: { headline: 'Falta el vídeo guía: súbelo y márcalo como Guía alineada.', fix: 'open_references', pending: true },
-  character_swap_trigger: { headline: 'El prompt debe empezar por body_swap: y nombrar <Picture 1>.', fix: 'restore_swap_prompt' },
-  character_swap_identity: { headline: 'El retrato de identidad debe ser la primera imagen.', fix: 'open_references', pending: true },
-  character_swap_playground: { headline: 'Plantilla experimental: el vídeo es una referencia normal, no la guía aprobada.' },
-  prompt_missing_reference_tags: { headline: 'Nombra cada referencia en el prompt.', fix: 'append_tags' },
-  references_required: { headline: 'Esta tarea necesita al menos una referencia.', fix: 'open_references', pending: true },
-  identity_image_required: { headline: 'Falta la imagen de identidad.', fix: 'open_references', pending: true },
-  motion_video_required: { headline: 'Falta el clip de movimiento.', fix: 'open_references', pending: true },
-  first_frame_required: { headline: 'Falta la imagen inicial.', fix: 'open_references', pending: true },
-  first_last_required: { headline: 'Faltan la imagen inicial y la final.', fix: 'open_references', pending: true },
-  unknown_asset: { headline: 'Una referencia ya no está en la biblioteca.', fix: 'open_references' },
-  custom_sigmas_invalid: { headline: 'Las sigmas manuales no son válidas.', fix: 'open_advanced' },
-  custom_sigmas_profile: { headline: 'Las sigmas manuales requieren Quality y continuidad apagada.', fix: 'open_advanced' },
-  lora_unavailable: { headline: 'Un LoRA de la cadena no está instalado.', fix: 'open_advanced' },
-  duplicate_lora: { headline: 'Hay un LoRA repetido en la cadena.', fix: 'open_advanced' },
-  checkpoint_missing: { headline: 'El checkpoint elegido no está instalado.', fix: 'open_advanced' },
-  ref_image_size_max_cost: { headline: 'Detalle máximo de referencias: el render puede tardar varias veces más.' },
-  continuity_auto_split: { headline: 'La toma se dividirá en ventanas.' },
-}
+  guide_alignment: { headline: t('La guía no coincide con la salida.'), pending: true },
+  guide_metadata_missing: { headline: t('No se pudo certificar la guía (fps variables o metadatos ilegibles).') },
+  guide_continuity: { headline: t('Una guía alineada necesita la continuidad automática apagada.'), fix: 'disable_continuity' },
+  guide_recipe: { headline: t('La guía alineada solo funciona con Quality y el checkpoint Default (INT8).'), fix: 'guide_recipe' },
+  guide_audio_unsupported: { headline: t('La guía alineada va sin sonido.'), fix: 'mute_guide' },
+  guide_mode: { headline: t('Las guías alineadas requieren la tarea Referencias y una sola guía.'), fix: 'open_references' },
+  guide_unavailable: { headline: t('El runtime de H3 no tiene los nodos de guía disponibles ahora mismo.') },
+  character_swap_guide_required: { headline: t('Falta el vídeo guía: súbelo y márcalo como Guía alineada.'), fix: 'open_references', pending: true },
+  character_swap_trigger: { headline: t('El prompt debe empezar por body_swap: y nombrar <Picture 1>.'), fix: 'restore_swap_prompt' },
+  character_swap_identity: { headline: t('El retrato de identidad debe ser la primera imagen.'), fix: 'open_references', pending: true },
+  character_swap_playground: { headline: t('Plantilla experimental: el vídeo es una referencia normal, no la guía aprobada.') },
+  prompt_missing_reference_tags: { headline: t('Nombra cada referencia en el prompt.'), fix: 'append_tags' },
+  references_required: { headline: t('Esta tarea necesita al menos una referencia.'), fix: 'open_references', pending: true },
+  identity_image_required: { headline: t('Falta la imagen de identidad.'), fix: 'open_references', pending: true },
+  motion_video_required: { headline: t('Falta el clip de movimiento.'), fix: 'open_references', pending: true },
+  first_frame_required: { headline: t('Falta la imagen inicial.'), fix: 'open_references', pending: true },
+  first_last_required: { headline: t('Faltan la imagen inicial y la final.'), fix: 'open_references', pending: true },
+  unknown_asset: { headline: t('Una referencia ya no está en la biblioteca.'), fix: 'open_references' },
+  custom_sigmas_invalid: { headline: t('Las sigmas manuales no son válidas.'), fix: 'open_advanced' },
+  custom_sigmas_profile: { headline: t('Las sigmas manuales requieren Quality y continuidad apagada.'), fix: 'open_advanced' },
+  lora_unavailable: { headline: t('Un LoRA de la cadena no está instalado.'), fix: 'open_advanced' },
+  duplicate_lora: { headline: t('Hay un LoRA repetido en la cadena.'), fix: 'open_advanced' },
+  checkpoint_missing: { headline: t('El checkpoint elegido no está instalado.'), fix: 'open_advanced' },
+  ref_image_size_max_cost: { headline: t('Detalle máximo de referencias: el render puede tardar varias veces más.') },
+  continuity_auto_split: { headline: t('La toma se dividirá en ventanas.') },
+}))
 
 export function issueGuidance(issue: Issue): IssueGuidance | null {
   return GUIDANCE[issue.code] ?? null

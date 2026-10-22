@@ -9,6 +9,7 @@ import { Badge } from '../ui/badge'
 import { LazyVideo } from '../ui/lazy-video'
 import { ProgressBar } from '../ui/progress'
 import { TakeActions } from '../stage/TakeActions'
+import { t, useT } from '../../i18n'
 
 interface TakeCardProps {
   job: JobOut
@@ -17,6 +18,7 @@ interface TakeCardProps {
 }
 
 export function TakeCard({ job, selected, onSelect }: TakeCardProps) {
+  useT()
   const video = job.outputs.find((output) => output.kind === 'video')
   const image = job.outputs.find((output) => output.kind === 'image')
   const audio = job.outputs.find((output) => output.kind === 'audio')
@@ -34,7 +36,7 @@ export function TakeCard({ job, selected, onSelect }: TakeCardProps) {
         onClick={onSelect}
         aria-current={selected}
         className="block w-full text-left"
-        aria-label={`Ver ${job.title ?? 'toma sin título'} en el escenario`}
+        aria-label={t('Ver {title} en el escenario', { title: job.title ?? t('toma sin título') })}
       >
         <span className="relative block aspect-video overflow-hidden bg-ink-950">
           {video ? (
@@ -64,7 +66,7 @@ export function TakeCard({ job, selected, onSelect }: TakeCardProps) {
 
           {job.hidden ? (
             <span className="absolute left-1.5 top-1.5 rounded-sm bg-ink-950/80 p-1">
-              <EyeOff className="size-3 text-faint" aria-label="Oculta" />
+              <EyeOff className="size-3 text-faint" aria-label={t('Oculta')} />
             </span>
           ) : null}
 
@@ -87,7 +89,7 @@ export function TakeCard({ job, selected, onSelect }: TakeCardProps) {
         </span>
 
         <span className="block px-2.5 pb-1.5 pt-2">
-          <span className="block truncate text-xs font-semibold text-fg">{job.title ?? 'Toma sin título'}</span>
+          <span className="block truncate text-xs font-semibold text-fg">{job.title ?? t('Toma sin título')}</span>
           <span className="mt-0.5 block truncate text-[11px] text-faint">{job.prompt}</span>
           <span className="tabular mt-1 block text-[10px] text-faint">
             {job.width}×{job.height} · {job.length} f · {job.method}

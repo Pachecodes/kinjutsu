@@ -1,6 +1,7 @@
 import { Loader2, MessageSquareText, Plus, Send, Sparkles } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
+import { t, useT } from '../../i18n'
 import { ApiError, api } from '../../lib/api'
 import type { Mode, PromptChatMessage, ReferenceInput } from '../../lib/types'
 import { Button } from '../ui/button'
@@ -36,6 +37,7 @@ export function PromptChatDialog({
   references,
   onUsePrompt,
 }: PromptChatDialogProps) {
+  useT()
   const imageCount = references.filter((reference) => reference.kind === 'image').length
   const contextKey = `${mode}\u0000${currentPrompt}\u0000${references
     .map((reference) => `${reference.asset_id}:${reference.kind}:${reference.role}`)
@@ -87,7 +89,7 @@ export function PromptChatDialog({
       }
       setMessages((current) => [...current, assistantMessage].slice(-24))
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'GPU Prompt Chat could not respond.')
+      setError(requestError instanceof ApiError ? requestError.message : t('GPU Prompt Chat no pudo responder.'))
     } finally {
       setSending(false)
     }
@@ -103,15 +105,15 @@ export function PromptChatDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPanel
         title="GPU Prompt Chat"
-        description="Multimodal Gemma 4 E2B uncensored on GPU · released automatically before H3 renders."
+        description={t('Gemma 4 E2B multimodal sin censura en GPU · se libera automáticamente antes de cada render de H3.')}
         className="h-[min(78dvh,46rem)] w-[min(52rem,calc(100vw-1rem))]"
       >
         <div className="flex h-full min-h-0 flex-col">
           <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
-            <span className="truncate text-[10px] text-faint">{model} · 8K context · GPU on demand · 3-minute idle release</span>
+            <span className="truncate text-[10px] text-faint">{t('{model} · contexto 8K · GPU bajo demanda · se libera tras 3 minutos inactiva', { model })}</span>
             <Button variant="ghost" size="sm" onClick={reset} disabled={sending || messages.length === 0}>
               <Plus aria-hidden />
-              New chat
+              {t('Nuevo chat')}
             </Button>
           </div>
 
@@ -120,11 +122,13 @@ export function PromptChatDialog({
               <div className="mx-auto flex h-full max-w-lg flex-col justify-center gap-4 py-6">
                 <div className="space-y-1.5">
                   <MessageSquareText className="size-5 text-accent" aria-hidden />
-                  <h3 className="display-title text-sm text-fg">Shape the shot through conversation</h3>
+                  <h3 className="display-title text-sm text-fg">{t('Da forma a la toma conversando')}</h3>
                   <p className="text-pretty text-xs leading-relaxed text-faint">
-                    {imageCount > 0
-                      ? `Gemma sees ${imageCount} attached image${imageCount === 1 ? '' : 's'} and receives their exact H3 roles, current prompt, duration and continuity rules.`
-                      : 'No image is attached. Gemma receives the current mode, duration, prompt and H3 continuity rules as text.'}
+                    {imageCount === 1
+                      ? t('Gemma ve 1 imagen adjunta y recibe su rol exacto de H3, el prompt actual, la duración y las reglas de continuidad.')
+                      : imageCount > 1
+                        ? t('Gemma ve {n} imágenes adjuntas y recibe sus roles exactos de H3, el prompt actual, la duración y las reglas de continuidad.', { n: imageCount })
+                        : t('No hay ninguna imagen adjunta. Gemma recibe como texto el modo actual, la duración, el prompt y las reglas de continuidad de H3.')}
                   </p>
                 </div>
                 <div className="grid gap-2">
@@ -152,7 +156,7 @@ export function PromptChatDialog({
                     }
                   >
                     <div className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-faint">
-                      {message.role === 'user' ? 'You' : 'Gemma'}
+                      {message.role === 'user' ? t('Tú') : 'Gemma'}
                     </div>
                     <pre className="whitespace-pre-wrap font-sans text-pretty text-xs leading-relaxed text-fg">
                       {message.content}
@@ -165,7 +169,7 @@ export function PromptChatDialog({
                         onClick={() => onUsePrompt(message.content)}
                       >
                         <Sparkles aria-hidden />
-                        Use as H3 prompt
+                        {t('Usar como prompt de H3')}
                       </Button>
                     ) : null}
                   </article>
@@ -173,7 +177,7 @@ export function PromptChatDialog({
                 {sending ? (
                   <div className="flex items-center gap-2 border-l-2 border-accent/55 py-2 pl-3 text-xs text-faint">
                     <Loader2 className="size-3.5 animate-spin text-accent" aria-hidden />
-                    Gemma is writing with the H3 guide…
+                    {t('Gemma está escribiendo con la guía de H3…')}
                   </div>
                 ) : null}
                 <div ref={end} />
@@ -189,7 +193,7 @@ export function PromptChatDialog({
 
           <div className="border-t border-line pt-3">
             <label htmlFor="gpu-prompt-chat" className="mb-1.5 block text-[10px] font-medium uppercase tracking-[0.12em] text-faint">
-              Message
+              {t('Mensaje')}
             </label>
             <div className="flex items-end gap-2">
               <Textarea
@@ -197,7 +201,7 @@ export function PromptChatDialog({
                 value={draft}
                 rows={2}
                 maxLength={12000}
-                placeholder="Describe the change, ask for options, or request the final H3 prompt…"
+                placeholder={t('Describe el cambio, pide opciones o solicita el prompt final de H3…')}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && !event.shiftKey) {
@@ -210,14 +214,14 @@ export function PromptChatDialog({
               <Button
                 variant="primary"
                 size="icon"
-                aria-label="Send message to Gemma"
+                aria-label={t('Enviar mensaje a Gemma')}
                 disabled={!draft.trim() || sending}
                 onClick={() => void submit()}
               >
                 {sending ? <Loader2 className="animate-spin" aria-hidden /> : <Send aria-hidden />}
               </Button>
             </div>
-            <p className="mt-1.5 text-[10px] text-faint">Enter to send · Shift+Enter for a new line</p>
+            <p className="mt-1.5 text-[10px] text-faint">{t('Enter para enviar · Shift+Enter para una nueva línea')}</p>
           </div>
         </div>
       </DialogPanel>

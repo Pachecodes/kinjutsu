@@ -6,6 +6,7 @@ import { canAccept } from '../lib/references'
 import type { AssetOut } from '../lib/types'
 import { useComposer } from '../state/composer'
 import { useAssetUpload } from './queries'
+import { t } from '../i18n'
 
 export interface UploadProgress {
   name: string
@@ -33,15 +34,15 @@ export function useReferenceIngest() {
           })
           if (!addAsset(asset)) {
             toast({
-              title: 'Subido, pero no añadido',
-              description: `${asset.original_name} está en la biblioteca; esta tarea no tiene hueco libre para él.`,
+              title: t('Subido, pero no añadido'),
+              description: t('{name} está en la biblioteca; esta tarea no tiene hueco libre para él.', { name: asset.original_name }),
               tone: 'info',
             })
           }
         } catch (error) {
           toast({
-            title: `No se pudo añadir ${file.name}`,
-            description: error instanceof ApiError ? error.message : 'La subida falló.',
+            title: t('No se pudo añadir {name}', { name: file.name }),
+            description: error instanceof ApiError ? error.message : t('La subida falló.'),
             tone: 'error',
           })
         } finally {
@@ -57,7 +58,7 @@ export function useReferenceIngest() {
       const { mode, references } = useComposer.getState()
       const decision = canAccept(mode, references, asset.kind)
       if (!decision.ok) {
-        toast({ title: 'Sin hueco libre', description: decision.reason, tone: 'info' })
+        toast({ title: t('Sin hueco libre'), description: decision.reason, tone: 'info' })
         return false
       }
       return addAsset(asset)

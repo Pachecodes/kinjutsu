@@ -8,6 +8,7 @@ import { findGuide, guideStatus } from './guideSync'
 import { swapPromptReady } from './promptBuilder'
 import type { ReferenceSlot } from './references'
 import type { Mode, RefKind, RefRole } from './types'
+import { t } from '../i18n'
 
 /** A named place the current task expects something in. */
 export interface SlotSpec {
@@ -23,30 +24,30 @@ export interface SlotSpec {
 export function slotsFor(mode: Mode, presetId: string | null): SlotSpec[] {
   if (mode === 'ref2va' && isGuideSwapPreset(presetId)) {
     return [
-      { key: 'identity', kind: 'image', roles: ['identity', 'subject'], label: 'Identidad', hint: 'Retrato del personaje · <Picture 1>', required: true },
-      { key: 'guide', kind: 'video', roles: ['aligned_guide'], label: 'Vídeo guía', hint: 'Pose, gestos, ropa, escena y cámara', required: true },
+      { key: 'identity', kind: 'image', roles: ['identity', 'subject'], label: t('Identidad'), hint: t('Retrato del personaje · <Picture 1>'), required: true },
+      { key: 'guide', kind: 'video', roles: ['aligned_guide'], label: t('Vídeo guía'), hint: t('Pose, gestos, ropa, escena y cámara'), required: true },
     ]
   }
   if (mode === 'ref2va' && isSwapPreset(presetId)) {
     return [
-      { key: 'identity', kind: 'image', roles: ['identity', 'subject'], label: 'Identidad', hint: 'Retrato del personaje · <Picture 1>', required: true },
-      { key: 'motion', kind: 'video', roles: ['motion'], label: 'Vídeo de movimiento', hint: 'Referencia normal · <Video 1>', required: true },
+      { key: 'identity', kind: 'image', roles: ['identity', 'subject'], label: t('Identidad'), hint: t('Retrato del personaje · <Picture 1>'), required: true },
+      { key: 'motion', kind: 'video', roles: ['motion'], label: t('Vídeo de movimiento'), hint: t('Referencia normal · <Video 1>'), required: true },
     ]
   }
   if (mode === 'performance') {
     return [
-      { key: 'identity', kind: 'image', roles: ['identity'], label: 'Identidad', hint: 'Retrato canónico', required: true },
-      { key: 'motion', kind: 'video', roles: ['motion'], label: 'Movimiento', hint: 'Clip de 2–15 s', required: true },
-      { key: 'voice', kind: 'audio', roles: ['voice', 'ambience'], label: 'Voz', hint: 'Opcional · máx. 15 s', required: false },
+      { key: 'identity', kind: 'image', roles: ['identity'], label: t('Identidad'), hint: t('Retrato canónico'), required: true },
+      { key: 'motion', kind: 'video', roles: ['motion'], label: t('Movimiento'), hint: t('Clip de 2–15 s'), required: true },
+      { key: 'voice', kind: 'audio', roles: ['voice', 'ambience'], label: t('Voz'), hint: t('Opcional · máx. 15 s'), required: false },
     ]
   }
   if (mode === 'first_frame') {
-    return [{ key: 'first', kind: 'image', roles: ['first_frame'], label: 'Imagen inicial', hint: 'La toma abre aquí', required: true }]
+    return [{ key: 'first', kind: 'image', roles: ['first_frame'], label: t('Imagen inicial'), hint: t('La toma abre aquí'), required: true }]
   }
   if (mode === 'first_last') {
     return [
-      { key: 'first', kind: 'image', roles: ['first_frame'], label: 'Inicio', hint: 'Primer fotograma', required: true },
-      { key: 'last', kind: 'image', roles: ['last_frame'], label: 'Final', hint: 'Último fotograma', required: true },
+      { key: 'first', kind: 'image', roles: ['first_frame'], label: t('Inicio'), hint: t('Primer fotograma'), required: true },
+      { key: 'last', kind: 'image', roles: ['last_frame'], label: t('Final'), hint: t('Último fotograma'), required: true },
     ]
   }
   return []
@@ -76,14 +77,14 @@ export function swapChecklist(input: {
     ? findGuide(input.references) !== null
     : input.references.some((slot) => slot.asset.kind === 'video' && slot.role === 'motion')
   const steps: ChecklistStep[] = [
-    { id: 'identity', label: 'Retrato de identidad', done: identity, focus: 'slot-identity' },
-    { id: 'video', label: guided ? 'Vídeo guía' : 'Vídeo de movimiento', done: video, focus: guided ? 'slot-guide' : 'slot-motion' },
+    { id: 'identity', label: t('Retrato de identidad'), done: identity, focus: 'slot-identity' },
+    { id: 'video', label: guided ? t('Vídeo guía') : t('Vídeo de movimiento'), done: video, focus: guided ? 'slot-guide' : 'slot-motion' },
   ]
   if (guided) {
     const status = guideStatus(input, findGuide(input.references))
-    steps.push({ id: 'aligned', label: 'Guía alineada a la salida', done: Boolean(status?.ok), focus: 'guide-sync' })
+    steps.push({ id: 'aligned', label: t('Guía alineada a la salida'), done: Boolean(status?.ok), focus: 'guide-sync' })
   }
-  steps.push({ id: 'prompt', label: 'Prompt body_swap con <Picture 1>', done: swapPromptReady(input.prompt), focus: 'prompt' })
+  steps.push({ id: 'prompt', label: t('Prompt body_swap con <Picture 1>'), done: swapPromptReady(input.prompt), focus: 'prompt' })
   return steps
 }
 

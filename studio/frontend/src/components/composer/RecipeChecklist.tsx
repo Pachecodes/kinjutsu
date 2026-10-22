@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react'
 
+import { t, useT } from '../../i18n'
 import { isSwapPreset } from '../../lib/curation'
 import { cn } from '../../lib/cn'
 import { swapChecklist } from '../../lib/recipeRoute'
@@ -22,6 +23,7 @@ function focusTarget(target: string) {
  * each step one click away from the control that resolves it.
  */
 export function RecipeChecklist() {
+  useT()
   const presetId = useComposer((state) => state.presetId)
   const references = useComposer((state) => state.references)
   const prompt = useComposer((state) => state.prompt)
@@ -35,15 +37,19 @@ export function RecipeChecklist() {
   const remaining = steps.filter((step) => !step.done).length
 
   return (
-    <nav aria-label="Pasos de la receta" className="flex flex-wrap items-center gap-1.5">
-      <span className="eyebrow mr-1">{remaining === 0 ? 'Listo para generar' : `Faltan ${remaining}`}</span>
+    <nav aria-label={t('Pasos de la receta')} className="flex flex-wrap items-center gap-1.5">
+      <span className="eyebrow mr-1">{remaining === 0 ? t('Listo para generar') : t('Faltan {n}', { n: remaining })}</span>
       <ol className="flex flex-wrap items-center gap-1.5">
         {steps.map((step, index) => (
           <li key={step.id}>
             <button
               type="button"
               onClick={() => focusTarget(step.focus)}
-              aria-label={`Paso ${index + 1}: ${step.label} — ${step.done ? 'hecho' : 'pendiente'}`}
+              aria-label={
+                step.done
+                  ? t('Paso {n}: {label} — hecho', { n: index + 1, label: step.label })
+                  : t('Paso {n}: {label} — pendiente', { n: index + 1, label: step.label })
+              }
               className={cn(
                 'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors',
                 step.done

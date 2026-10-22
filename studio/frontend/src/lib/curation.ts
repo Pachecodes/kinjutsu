@@ -6,6 +6,7 @@
  */
 
 import type { JobOut, MethodId, Mode, Preset } from './types'
+import { localized, localizedList, t } from '../i18n'
 
 export type PresetTier = 'recommended' | 'standard' | 'experimental'
 
@@ -92,61 +93,61 @@ export interface ModeCopy {
 }
 
 /** Task names in creator language. Mode ids are the stable API enum. */
-export const MODE_COPY: Record<Mode, ModeCopy> = {
-  text: { label: 'Texto a vídeo', short: 'Texto', blurb: 'Solo prompt. H3 escribe imagen y sonido.' },
+export const MODE_COPY: Record<Mode, ModeCopy> = localized(() => ({
+  text: { label: t('Texto a vídeo'), short: t('Texto'), blurb: t('Solo prompt. H3 escribe imagen y sonido.') },
   first_frame: {
-    label: 'Animar una imagen',
-    short: 'Imagen',
-    blurb: 'Parte de una imagen fija y deja que la escena se mueva.',
+    label: t('Animar una imagen'),
+    short: t('Imagen'),
+    blurb: t('Parte de una imagen fija y deja que la escena se mueva.'),
   },
   first_last: {
-    label: 'Inicio + final',
-    short: 'Inicio+fin',
-    blurb: 'Fija la primera y la última imagen; H3 rellena el medio.',
+    label: t('Inicio + final'),
+    short: t('Inicio+fin'),
+    blurb: t('Fija la primera y la última imagen; H3 rellena el medio.'),
   },
   ref2va: {
-    label: 'Referencias',
-    short: 'Refs',
-    blurb: 'Hasta 9 imágenes, 3 clips y 3 audios como anclas de identidad y estilo.',
+    label: t('Referencias'),
+    short: t('Refs'),
+    blurb: t('Hasta 9 imágenes, 3 clips y 3 audios como anclas de identidad y estilo.'),
   },
   performance: {
-    label: 'Performance',
-    short: 'Performance',
-    blurb: 'Una identidad, un clip de movimiento y voz opcional.',
+    label: t('Performance'),
+    short: t('Performance'),
+    blurb: t('Una identidad, un clip de movimiento y voz opcional.'),
   },
-}
+}))
 
 export type RenderPhase = 'queued' | 'load' | 'refs' | 'prepare' | 'render' | 'decode' | 'save'
 
-export const PHASES: { id: RenderPhase; label: string }[] = [
-  { id: 'queued', label: 'En cola' },
-  { id: 'load', label: 'Cargando modelos' },
-  { id: 'refs', label: 'Leyendo referencias' },
-  { id: 'prepare', label: 'Preparando' },
-  { id: 'render', label: 'Renderizando' },
-  { id: 'decode', label: 'Decodificando' },
-  { id: 'save', label: 'Guardando' },
-]
+export const PHASES: { id: RenderPhase; label: string }[] = localizedList(() => [
+  { id: 'queued', label: t('En cola') },
+  { id: 'load', label: t('Cargando modelos') },
+  { id: 'refs', label: t('Leyendo referencias') },
+  { id: 'prepare', label: t('Preparando') },
+  { id: 'render', label: t('Renderizando') },
+  { id: 'decode', label: t('Decodificando') },
+  { id: 'save', label: t('Guardando') },
+])
 
 /** Backend stage labels (`STAGE_LABELS` in jobs.py) → phase + creator wording. */
-const STAGES: Record<string, { phase: RenderPhase; label: string }> = {
-  'Loading H3 weights': { phase: 'load', label: 'Cargando pesos de H3' },
-  'Loading text encoder': { phase: 'load', label: 'Cargando codificador de texto' },
-  'Applying LoRAs': { phase: 'load', label: 'Aplicando LoRAs' },
-  'Loading VAE': { phase: 'load', label: 'Cargando VAE' },
-  'Reading references': { phase: 'refs', label: 'Leyendo referencias' },
-  'Unpacking motion clip': { phase: 'refs', label: 'Desempaquetando el clip' },
-  'Understanding the prompt': { phase: 'prepare', label: 'Interpretando el prompt' },
-  'Understanding references': { phase: 'prepare', label: 'Preparando referencias' },
-  'Preparing fast preview': { phase: 'prepare', label: 'Preparando caché' },
-  'Patching attention': { phase: 'prepare', label: 'Ajustando atención' },
-  'Building the schedule': { phase: 'prepare', label: 'Preparando el muestreo' },
-  Rendering: { phase: 'render', label: 'Renderizando' },
-  'Decoding video': { phase: 'decode', label: 'Decodificando vídeo' },
-  'Decoding audio': { phase: 'decode', label: 'Decodificando audio' },
-  'Muxing video and sound': { phase: 'save', label: 'Uniendo vídeo y sonido' },
-  'Saving take': { phase: 'save', label: 'Guardando la toma' },
-}
+const STAGES: Record<string, { phase: RenderPhase; label: string }> = localized(() => ({
+  'Loading H3 weights': { phase: 'load', label: t('Cargando pesos de H3') },
+  'Loading text encoder': { phase: 'load', label: t('Cargando codificador de texto') },
+  'Applying LoRAs': { phase: 'load', label: t('Aplicando LoRAs') },
+  'Loading VAE': { phase: 'load', label: t('Cargando VAE') },
+  'Reading references': { phase: 'refs', label: t('Leyendo referencias') },
+  'Unpacking motion clip': { phase: 'refs', label: t('Desempaquetando el clip') },
+  'Understanding the prompt': { phase: 'prepare', label: t('Interpretando el prompt') },
+  'Understanding references': { phase: 'prepare', label: t('Preparando referencias') },
+  'Preparing fast preview': { phase: 'prepare', label: t('Preparando caché') },
+  'Patching attention': { phase: 'prepare', label: t('Ajustando atención') },
+  'Building the schedule': { phase: 'prepare', label: t('Preparando el muestreo') },
+  Rendering: { phase: 'render', label: t('Renderizando') },
+  'Decoding video': { phase: 'decode', label: t('Decodificando vídeo') },
+  'Decoding audio': { phase: 'decode', label: t('Decodificando audio') },
+  'Muxing video and sound': { phase: 'save', label: t('Uniendo vídeo y sonido') },
+  'Saving take': { phase: 'save', label: t('Guardando la toma') },
+}))
 
 export interface StageInfo {
   phase: RenderPhase
@@ -156,19 +157,19 @@ export interface StageInfo {
 }
 
 export function describeStage(job: Pick<JobOut, 'status' | 'stage'>): StageInfo {
-  if (job.status === 'queued') return { phase: 'queued', label: 'En cola', raw: job.stage }
+  if (job.status === 'queued') return { phase: 'queued', label: t('En cola'), raw: job.stage }
   const known = job.stage ? STAGES[job.stage] : undefined
   if (known) return { ...known, raw: job.stage }
-  return { phase: 'render', label: job.stage ?? 'Renderizando', raw: job.stage }
+  return { phase: 'render', label: job.stage ?? t('Renderizando'), raw: job.stage }
 }
 
-export const STATUS_LABEL: Record<JobOut['status'], string> = {
-  queued: 'En cola',
-  running: 'Generando',
-  completed: 'Lista',
-  failed: 'Falló',
-  canceled: 'Cancelada',
-}
+export const STATUS_LABEL: Record<JobOut['status'], string> = localized(() => ({
+  queued: t('En cola'),
+  running: t('Generando'),
+  completed: t('Lista'),
+  failed: t('Falló'),
+  canceled: t('Cancelada'),
+}))
 
 /** What the backend actually did on cancel, read from the take's own events. */
 export type CancelOutcome = 'dequeued' | 'interrupt_requested' | 'not_running' | 'before_submit' | 'unknown'
@@ -183,23 +184,23 @@ export function cancelOutcome(messages: string[]): CancelOutcome {
   return 'unknown'
 }
 
-export const CANCEL_COPY: Record<CancelOutcome, string> = {
-  dequeued: 'Se quitó de la cola de ComfyUI antes de empezar. No se calculó nada.',
+export const CANCEL_COPY: Record<CancelOutcome, string> = localized(() => ({
+  dequeued: t('Se quitó de la cola de ComfyUI antes de empezar. No se calculó nada.'),
   interrupt_requested:
-    'Se pidió a ComfyUI que interrumpa el render. Se detiene al terminar el paso en curso; durante la decodificación puede tardar más. La GPU puede seguir ocupada unos segundos.',
-  not_running: 'ComfyUI no estaba ejecutando esta toma: se marcó cancelada sin interrumpir nada más.',
-  before_submit: 'Se canceló antes de llegar a ComfyUI. No se calculó nada.',
-  unknown: 'La toma está marcada como cancelada. El registro de actividad no indica si llegó a calcularse.',
-}
+    t('Se pidió a ComfyUI que interrumpa el render. Se detiene al terminar el paso en curso; durante la decodificación puede tardar más. La GPU puede seguir ocupada unos segundos.'),
+  not_running: t('ComfyUI no estaba ejecutando esta toma: se marcó cancelada sin interrumpir nada más.'),
+  before_submit: t('Se canceló antes de llegar a ComfyUI. No se calculó nada.'),
+  unknown: t('La toma está marcada como cancelada. El registro de actividad no indica si llegó a calcularse.'),
+}))
 
 const FRAME_ONLY: MethodId[] = ['w4a8_lightx2v', 'w4a8_lightx2v_trt', 'w4a8_latent2x_refine3']
 
 /** Why a method cannot run in this task, or null when it can. */
 export function methodModeBlock(id: MethodId, mode: Mode): string | null {
   if (FRAME_ONLY.includes(id) && (mode === 'ref2va' || mode === 'performance')) {
-    return 'Solo para Texto, Animar una imagen e Inicio + final.'
+    return t('Solo para Texto, Animar una imagen e Inicio + final.')
   }
-  if (id === 'fast_h3_omni_8step' && mode !== 'ref2va') return 'Escenas Omni usa Referencias (Ref2VA), no Performance ni fotogramas.'
-  if (id === 'ref2va_vsa' && mode !== 'ref2va') return 'Solo en la tarea Referencias.'
+  if (id === 'fast_h3_omni_8step' && mode !== 'ref2va') return t('Escenas Omni usa Referencias (Ref2VA), no Performance ni fotogramas.')
+  if (id === 'ref2va_vsa' && mode !== 'ref2va') return t('Solo en la tarea Referencias.')
   return null
 }

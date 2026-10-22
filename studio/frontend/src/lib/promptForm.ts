@@ -11,15 +11,16 @@ import { isGuideSwapPreset, isSwapPreset } from './curation'
 import { FPS } from './frames'
 import { referenceTags, type ReferenceSlot } from './references'
 import type { FormAsset, FormAssetRole, FormDialogue, FormShot, Mode, PromptForm, PromptTemplateId } from './types'
+import { localized, t } from '../i18n'
 
-export const TEMPLATE_LABEL: Record<PromptTemplateId, string> = {
-  'character-swap-aligned': 'Character Swap · guía alineada',
-  'motion-ref2va': 'Referencias · Motion (experimental)',
-  t2va: 'Texto a vídeo',
-  i2va: 'Animar una imagen',
+export const TEMPLATE_LABEL: Record<PromptTemplateId, string> = localized(() => ({
+  'character-swap-aligned': t('Character Swap · guía alineada'),
+  'motion-ref2va': t('Referencias · Motion (experimental)'),
+  t2va: t('Texto a vídeo'),
+  i2va: t('Animar una imagen'),
   fl2va: 'Inicio + final',
-  l2va: 'Solo imagen final',
-}
+  l2va: t('Solo imagen final'),
+}))
 
 /** Effective duration of the output, rounded to milliseconds for the prompt text. */
 export function effectiveSeconds(length: number): number {
@@ -69,14 +70,14 @@ export function mapAttachments(mode: Mode, slots: ReferenceSlot[]): AssetMapping
   slots.forEach((slot, index) => {
     const name = slot.asset.original_name
     if (slot.role === 'aligned_guide') {
-      assets.push({ uid: slot.uid, kind: 'aligned_guide', role: 'aligned_guide', label: 'Guía alineada (sin token)' })
+      assets.push({ uid: slot.uid, kind: 'aligned_guide', role: 'aligned_guide', label: t('Guía alineada (sin token)') })
       return
     }
     if (slot.asset.kind === 'image') {
       pictures += 1
       const role = IMAGE_ROLE[slot.role]
       if (!role) {
-        unsupported.push(`${name}: el rol «${slot.role}» no existe en el formulario (usa identidad, escena o estilo).`)
+        unsupported.push(t('{name}: el rol «{role}» no existe en el formulario (usa identidad, escena o estilo).', { name, role: slot.role }))
         return
       }
       const token = tags[index] ?? `<Picture ${pictures}>`
@@ -91,7 +92,7 @@ export function mapAttachments(mode: Mode, slots: ReferenceSlot[]): AssetMapping
     unsupported.push(
       slot.asset.kind === 'audio'
         ? `${name}: el formulario v1 no admite audio de referencia.`
-        : `${name}: solo se admite vídeo de movimiento (motion) o guía alineada.`,
+        : t('{name}: solo se admite vídeo de movimiento (motion) o guía alineada.', { name }),
     )
   })
   return { assets, unsupported }
@@ -106,7 +107,7 @@ export function templateProblem(template: PromptTemplateId, mapping: AssetMappin
     case 'character-swap-aligned':
       return same(['image:identity', 'aligned_guide:aligned_guide'])
         ? null
-        : 'Necesita exactamente el retrato de identidad (<Picture 1>) seguido de una guía alineada.'
+        : t('Necesita exactamente el retrato de identidad (<Picture 1>) seguido de una guía alineada.')
     case 'motion-ref2va': {
       const videos = mapping.assets.filter((asset) => asset.kind === 'video')
       const identities = mapping.assets.filter((asset) => asset.role === 'identity')
@@ -116,16 +117,16 @@ export function templateProblem(template: PromptTemplateId, mapping: AssetMappin
       )
       return videos.length === 1 && identities.length === 1 && !guide && !badImage
         ? null
-        : 'Necesita una imagen de identidad y exactamente un vídeo de movimiento; sin guía alineada ni audio.'
+        : t('Necesita una imagen de identidad y exactamente un vídeo de movimiento; sin guía alineada ni audio.')
     }
     case 't2va':
-      return pairs.length === 0 ? null : 'Texto a vídeo no lleva referencias.'
+      return pairs.length === 0 ? null : t('Texto a vídeo no lleva referencias.')
     case 'i2va':
-      return same(['image:first_frame']) ? null : 'Necesita solo una imagen inicial.'
+      return same(['image:first_frame']) ? null : t('Necesita solo una imagen inicial.')
     case 'fl2va':
-      return same(['image:first_frame', 'image:last_frame']) ? null : 'Necesita imagen inicial y final, en ese orden.'
+      return same(['image:first_frame', 'image:last_frame']) ? null : t('Necesita imagen inicial y final, en ese orden.')
     case 'l2va':
-      return same(['image:last_frame']) ? null : 'Necesita solo una imagen final.'
+      return same(['image:last_frame']) ? null : t('Necesita solo una imagen final.')
   }
 }
 

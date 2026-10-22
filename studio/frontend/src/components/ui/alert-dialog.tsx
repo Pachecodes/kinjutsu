@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import { cn } from '../../lib/cn'
 import { Button } from './button'
+import { t, useT } from '../../i18n'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -27,11 +28,12 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = 'Volver',
+  cancelLabel = t('Volver'),
   onConfirm,
   destructive = true,
   busy = false,
 }: ConfirmDialogProps) {
+  useT()
   return (
     <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialogPrimitive.Portal>

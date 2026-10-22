@@ -15,6 +15,7 @@ import {
 import { useId, useState, type ReactNode } from 'react'
 
 import { useConfig } from '../../hooks/queries'
+import { t, useT } from '../../i18n'
 import {
   useFeatures,
   useModelStatus,
@@ -84,13 +85,14 @@ function Section({
 
 /** Studio · engine · files, so nobody confuses opening a tab with starting a GPU process. */
 function HowItFits() {
+  useT()
   const items = [
-    { title: 'Studio', body: 'Esta app. Prepara tomas, guarda historial y manda el trabajo al motor.' },
-    { title: 'Motor ComfyUI', body: 'El proceso que renderiza en la GPU. Puede estar detenido aunque Studio funcione.' },
-    { title: 'Modelos y LoRAs', body: 'Archivos en disco que el motor carga en VRAM al generar. Espacio en disco no es VRAM.' },
+    { title: 'Studio', body: t('Esta app. Prepara tomas, guarda historial y manda el trabajo al motor.') },
+    { title: t('Motor ComfyUI'), body: t('El proceso que renderiza en la GPU. Puede estar detenido aunque Studio funcione.') },
+    { title: t('Modelos y LoRAs'), body: t('Archivos en disco que el motor carga en VRAM al generar. Espacio en disco no es VRAM.') },
   ]
   return (
-    <ol className="grid gap-2 sm:grid-cols-3" aria-label="Cómo encaja todo">
+    <ol className="grid gap-2 sm:grid-cols-3" aria-label={t('Cómo encaja todo')}>
       {items.map((item, index) => (
         <li key={item.title} className="rounded-xl border border-white/[0.06] bg-ink-950/50 p-2.5">
           <p className="text-[11px] font-bold uppercase tracking-caps text-muted">
@@ -104,6 +106,7 @@ function HowItFits() {
 }
 
 function EngineSection({ status, comfyOnline }: { status: WorkstationStatus; comfyOnline: boolean }) {
+  useT()
   const { start, open } = useWorkstationActions()
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -117,11 +120,11 @@ function EngineSection({ status, comfyOnline }: { status: WorkstationStatus; com
       const result = await start.mutateAsync()
       setNote(
         result.state === 'online'
-          ? 'Ya estaba en marcha: se reutilizó sin tocar sus trabajos.'
-          : 'Arranque pedido. Arrancado aún no es listo: el estado se actualiza solo hasta «en línea».',
+          ? t('Ya estaba en marcha: se reutilizó sin tocar sus trabajos.')
+          : t('Arranque pedido. Arrancado aún no es listo: el estado se actualiza solo hasta «en línea».'),
       )
     } catch (cause) {
-      setError(message(cause, 'No se pudo iniciar el motor.'))
+      setError(message(cause, t('No se pudo iniciar el motor.')))
     }
   }
 
@@ -130,14 +133,14 @@ function EngineSection({ status, comfyOnline }: { status: WorkstationStatus; com
     setNote(null)
     try {
       await open.mutateAsync()
-      setNote('Se pidió abrir ComfyUI en el navegador del equipo servidor. Si no ves la ventana, mírala en ese escritorio.')
+      setNote(t('Se pidió abrir ComfyUI en el navegador del equipo servidor. Si no ves la ventana, mírala en ese escritorio.'))
     } catch (cause) {
-      setError(message(cause, 'No se pudo abrir ComfyUI.'))
+      setError(message(cause, t('No se pudo abrir ComfyUI.')))
     }
   }
 
   return (
-    <Section title="Motor ComfyUI" icon={Cpu} help={HELP.engine}>
+    <Section title={t('Motor ComfyUI')} icon={Cpu} help={HELP.engine}>
       <div role="status" aria-live="polite" className={cn('rounded-xl border px-3 py-2.5', TONE[copy.tone])}>
         <p className="flex items-center gap-1.5 text-[13px] font-semibold">
           {status.state === 'starting' ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
@@ -150,7 +153,7 @@ function EngineSection({ status, comfyOnline }: { status: WorkstationStatus; com
 
       {status.label ? (
         <p className="text-[12px] text-muted">
-          Instalación elegida: <span className="font-semibold text-fg">{status.label}</span>
+          {t('Instalación elegida:')} <span className="font-semibold text-fg">{status.label}</span>
           {status.url ? <span className="font-mono text-[11px] text-faint"> · {status.url}</span> : null}
         </p>
       ) : null}
@@ -163,7 +166,7 @@ function EngineSection({ status, comfyOnline }: { status: WorkstationStatus; com
         )}
       >
         {generatesHere(status, comfyOnline)
-          ? 'Esta instalación es la que genera tus tomas en Studio.'
+          ? t('Esta instalación es la que genera tus tomas en Studio.')
           : binding.text}
       </p>
 
@@ -171,21 +174,21 @@ function EngineSection({ status, comfyOnline }: { status: WorkstationStatus; com
         <div className="space-y-1">
           <Button variant="primary" size="sm" className="w-full" disabled={!status.capabilities.start} loading={start.isPending} onClick={() => void doStart()}>
             <Play aria-hidden />
-            Iniciar motor
+            {t('Iniciar motor')}
           </Button>
           <p className="text-[10px] leading-snug text-faint">
             {status.capabilities.start
-              ? 'Arranca el proceso ComfyUI aprobado en el equipo. Solo con el puerto libre; nunca detiene ni reinicia otro.'
-              : 'Solo disponible con una instalación elegida, el motor detenido y su puerto libre.'}
+              ? t('Arranca el proceso ComfyUI aprobado en el equipo. Solo con el puerto libre; nunca detiene ni reinicia otro.')
+              : t('Solo disponible con una instalación elegida, el motor detenido y su puerto libre.')}
           </p>
         </div>
         <div className="space-y-1">
           <Button variant="outline" size="sm" className="w-full" disabled={!status.capabilities.open_comfy} loading={open.isPending} onClick={() => void doOpen()}>
             <ExternalLink aria-hidden />
-            Abrir ComfyUI
+            {t('Abrir ComfyUI')}
           </Button>
           <p className="text-[10px] leading-snug text-faint">
-            Abre la interfaz de ComfyUI en el navegador del servidor. No arranca el motor: debe estar en línea.
+            {t('Abre la interfaz de ComfyUI en el navegador del servidor. No arranca el motor: debe estar en línea.')}
           </p>
         </div>
       </div>
@@ -196,12 +199,13 @@ function EngineSection({ status, comfyOnline }: { status: WorkstationStatus; com
           {error}
         </p>
       ) : null}
-      <p className="text-[10px] text-faint">No hay botón de detener ni reiniciar: este panel nunca interrumpe renders.</p>
+      <p className="text-[10px] text-faint">{t('No hay botón de detener ni reiniciar: este panel nunca interrumpe renders.')}</p>
     </Section>
   )
 }
 
 function FoldersSection({ status }: { status: WorkstationStatus }) {
+  useT()
   const { folder } = useWorkstationActions()
   const { toast } = useToast()
   const [error, setError] = useState<string | null>(null)
@@ -211,17 +215,21 @@ function FoldersSection({ status }: { status: WorkstationStatus }) {
     setError(null)
     try {
       await folder.mutateAsync(kind)
-      toast({ title: `Carpeta ${FOLDER_LABEL[kind]} pedida`, description: 'Se abre en el Explorador del equipo servidor.', tone: 'info' })
+      toast({
+        title: t('Carpeta {folder} pedida', { folder: FOLDER_LABEL[kind] }),
+        description: t('Se abre en el Explorador del equipo servidor.'),
+        tone: 'info',
+      })
     } catch (cause) {
-      setError(message(cause, 'No se pudo abrir la carpeta.'))
+      setError(message(cause, t('No se pudo abrir la carpeta.')))
     }
   }
 
   return (
     <Section
-      title="Carpetas"
+      title={t('Carpetas')}
       icon={FolderOpen}
-      note="Abren el Explorador de Windows en el equipo servidor, no en tu teléfono. Solo las carpetas que el administrador aprobó para la instalación elegida."
+      note={t('Abren el Explorador de Windows en el equipo servidor, no en tu teléfono. Solo las carpetas que el administrador aprobó para la instalación elegida.')}
     >
       <div className="flex flex-wrap gap-2">
         {FOLDER_KINDS.map((kind) => (
@@ -237,7 +245,7 @@ function FoldersSection({ status }: { status: WorkstationStatus }) {
           </Button>
         ))}
       </div>
-      {!anyFolder ? <p className="text-[11px] text-faint">Elige una instalación aprobada para habilitar sus carpetas.</p> : null}
+      {!anyFolder ? <p className="text-[11px] text-faint">{t('Elige una instalación aprobada para habilitar sus carpetas.')}</p> : null}
       {error ? <p role="alert" className="text-[11px] text-danger">{error}</p> : null}
     </Section>
   )
@@ -251,6 +259,7 @@ function Consent({ label, children, onConfirm, onCancel, busy, confirmLabel }: {
   busy: boolean
   confirmLabel: string
 }) {
+  useT()
   const [accepted, setAccepted] = useState(false)
   const id = useId()
   return (
@@ -258,11 +267,11 @@ function Consent({ label, children, onConfirm, onCancel, busy, confirmLabel }: {
       {children}
       <label htmlFor={id} className="flex items-start gap-2 text-[12px] text-fg">
         <input id={id} type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-0.5 size-4 accent-[hsl(var(--accent))]" />
-        Lo entiendo y quiero continuar.
+        {t('Lo entiendo y quiero continuar.')}
       </label>
       <div className="flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy}>
-          Cancelar
+          {t('Cancelar')}
         </Button>
         <Button variant="primary" size="sm" disabled={!accepted} loading={busy} onClick={onConfirm}>
           {confirmLabel}
@@ -273,6 +282,7 @@ function Consent({ label, children, onConfirm, onCancel, busy, confirmLabel }: {
 }
 
 function RuntimeRow({ runtime, selected }: { runtime: RuntimeCandidate; selected: boolean }) {
+  useT()
   const { selectRuntime } = useWorkstationActions()
   const [asking, setAsking] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -285,7 +295,7 @@ function RuntimeRow({ runtime, selected }: { runtime: RuntimeCandidate; selected
       setDone(true)
       setAsking(false)
     } catch (cause) {
-      setError(message(cause, 'No se pudo elegir esta instalación.'))
+      setError(message(cause, t('No se pudo elegir esta instalación.')))
     }
   }
 
@@ -297,40 +307,40 @@ function RuntimeRow({ runtime, selected }: { runtime: RuntimeCandidate; selected
           <p className="truncate font-mono text-[10px] text-faint" title={runtime.location}>{runtime.location}</p>
         </div>
         <div className="flex flex-wrap gap-1">
-          {selected ? <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold', TONE.ok)}>Elegida</span> : null}
+          {selected ? <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold', TONE.ok)}>{t('Elegida')}</span> : null}
           <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold', runtime.approved ? TONE.ok : TONE.idle)}>
-            {runtime.approved ? 'Aprobada' : 'Solo detectada'}
+            {runtime.approved ? t('Aprobada') : t('Solo detectada')}
           </span>
           <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold', runtime.online ? TONE.busy : TONE.idle)}>
-            {runtime.online ? 'Respondió ahora' : 'Sin respuesta'}
+            {runtime.online ? t('Respondió ahora') : t('Sin respuesta')}
           </span>
         </div>
       </div>
       {!runtime.approved ? (
         <p className="mt-2 text-[11px] leading-snug text-faint">
-          Detectada no es aprobada: el administrador debe autorizarla en la configuración local del equipo antes de poder elegirla o arrancarla.
+          {t('Detectada no es aprobada: el administrador debe autorizarla en la configuración local del equipo antes de poder elegirla o arrancarla.')}
         </p>
       ) : null}
       {runtime.approved && !selected && !done && !asking ? (
         <Button variant="outline" size="sm" className="mt-2" onClick={() => setAsking(true)}>
-          Usar esta instalación…
+          {t('Usar esta instalación…')}
         </Button>
       ) : null}
       {asking ? (
         <Consent
-          label={`Usar ${runtime.label}`}
+          label={t('Usar {name}', { name: runtime.label })}
           busy={selectRuntime.isPending}
-          confirmLabel="Usar esta instalación"
+          confirmLabel={t('Usar esta instalación')}
           onCancel={() => setAsking(false)}
           onConfirm={() => void confirm()}
         >
-          <p>Studio usará este ComfyUI y sus carpetas tal como están: no copia ni mueve modelos.</p>
-          <p>No arranca el motor ni cambia con qué genera Studio ahora mismo; eso lo ajusta el administrador sin renders en curso.</p>
+          <p>{t('Studio usará este ComfyUI y sus carpetas tal como están: no copia ni mueve modelos.')}</p>
+          <p>{t('No arranca el motor ni cambia con qué genera Studio ahora mismo; eso lo ajusta el administrador sin renders en curso.')}</p>
         </Consent>
       ) : null}
       {done ? (
         <p role="status" className="mt-2 text-[11px] text-accent">
-          Elegida. La generación no se ha redirigido; revisa el estado del motor arriba.
+          {t('Elegida. La generación no se ha redirigido; revisa el estado del motor arriba.')}
         </p>
       ) : null}
       {error ? <p role="alert" className="mt-2 text-[11px] text-danger">{error}</p> : null}
@@ -339,6 +349,7 @@ function RuntimeRow({ runtime, selected }: { runtime: RuntimeCandidate; selected
 }
 
 function RootRow({ root, selectedId, downloading }: { root: RootCandidate; selectedId: string | null; downloading: boolean }) {
+  useT()
   const { selectRoot } = useWorkstationActions()
   const [asking, setAsking] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -352,11 +363,13 @@ function RootRow({ root, selectedId, downloading }: { root: RootCandidate; selec
       const outcome = await selectRoot.mutateAsync(root.id)
       setAsking(false)
       setResult(
-        `${outcome.verified_models} ${outcome.verified_models === 1 ? 'modelo verificado' : 'modelos verificados'} por SHA256 y reutilizados sin copiar.` +
-          (outcome.restart_required ? ' Reinicia Comfy (DETENER/INICIAR) en un momento sin renders para que los vea.' : ''),
+        (outcome.verified_models === 1
+          ? t('1 modelo verificado por SHA256 y reutilizados sin copiar.')
+          : t('{n} modelos verificados por SHA256 y reutilizados sin copiar.', { n: outcome.verified_models })) +
+          (outcome.restart_required ? ' ' + t('Reinicia Comfy (DETENER/INICIAR) en un momento sin renders para que los vea.') : ''),
       )
     } catch (cause) {
-      setError(message(cause, 'No se pudo verificar esta carpeta.'))
+      setError(message(cause, t('No se pudo verificar esta carpeta.')))
     }
   }
 
@@ -368,37 +381,37 @@ function RootRow({ root, selectedId, downloading }: { root: RootCandidate; selec
           <p className="truncate font-mono text-[10px] text-faint" title={root.location}>{root.location}</p>
         </div>
         <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold', already ? TONE.ok : root.approved ? TONE.busy : TONE.idle)}>
-          {already ? 'Ya autorizada para Modelos' : root.approved ? 'Aprobada · sin verificar' : 'Solo detectada'}
+          {already ? t('Ya autorizada para Modelos') : root.approved ? t('Aprobada · sin verificar') : t('Solo detectada')}
         </span>
       </div>
       {adoptable && !asking && !result ? (
         <Button variant="outline" size="sm" className="mt-2" disabled={downloading} onClick={() => setAsking(true)}>
           <HardDrive aria-hidden />
-          Verificar y reutilizar…
+          {t('Verificar y reutilizar…')}
         </Button>
       ) : null}
       {adoptable && downloading ? (
-        <p className="mt-1 text-[11px] text-warn">Espera a que termine la descarga de modelos en curso.</p>
+        <p className="mt-1 text-[11px] text-warn">{t('Espera a que termine la descarga de modelos en curso.')}</p>
       ) : null}
       {root.approved && !already && root.runtime_id !== selectedId ? (
-        <p className="mt-2 text-[11px] text-faint">Pertenece a otra instalación: elige esa instalación primero.</p>
+        <p className="mt-2 text-[11px] text-faint">{t('Pertenece a otra instalación: elige esa instalación primero.')}</p>
       ) : null}
       {asking ? (
         <Consent
-          label={`Reutilizar ${root.label}`}
+          label={t('Reutilizar {name}', { name: root.label })}
           busy={selectRoot.isPending}
-          confirmLabel="Verificar y reutilizar"
+          confirmLabel={t('Verificar y reutilizar')}
           onCancel={() => setAsking(false)}
           onConfirm={() => void confirm()}
         >
-          <p>Comprueba el SHA256 completo de los modelos del manifiesto que haya en esta carpeta. Puede tardar varios minutos; no cierres Studio.</p>
-          <p>No copia, mueve ni descarga pesos, y no modifica la configuración de otro ComfyUI. Los que falten seguirán faltando.</p>
+          <p>{t('Comprueba el SHA256 completo de los modelos del manifiesto que haya en esta carpeta. Puede tardar varios minutos; no cierres Studio.')}</p>
+          <p>{t('No copia, mueve ni descarga pesos, y no modifica la configuración de otro ComfyUI. Los que falten seguirán faltando.')}</p>
         </Consent>
       ) : null}
       {selectRoot.isPending ? (
         <p role="status" className="mt-2 flex items-center gap-1.5 text-[11px] text-accent">
           <Loader2 className="size-3.5 animate-spin" aria-hidden />
-          Verificando SHA256… puede tardar varios minutos.
+          {t('Verificando SHA256… puede tardar varios minutos.')}
         </p>
       ) : null}
       {result ? <p role="status" className="mt-2 text-[11px] text-accent">{result}</p> : null}
@@ -408,6 +421,7 @@ function RootRow({ root, selectedId, downloading }: { root: RootCandidate; selec
 }
 
 function DiscoverySection({ selectedId, modelsEnabled }: { selectedId: string | null; modelsEnabled: boolean }) {
+  useT()
   const [searching, setSearching] = useState(false)
   const discovery = useWorkstationDiscovery(searching)
   const modelStatus = useModelStatus(modelsEnabled)
@@ -415,10 +429,10 @@ function DiscoverySection({ selectedId, modelsEnabled }: { selectedId: string | 
 
   return (
     <Section
-      title="Instalaciones de ComfyUI"
+      title={t('Instalaciones de ComfyUI')}
       icon={Search}
       help={HELP.installation}
-      note="Busca solo en ubicaciones conocidas y carpetas que el administrador autorizó, durante unos 2 s, sin recorrer el disco ni descargar nada. Encontrar una instalación no la aprueba."
+      note={t('Busca solo en ubicaciones conocidas y carpetas que el administrador autorizó, durante unos 2 s, sin recorrer el disco ni descargar nada. Encontrar una instalación no la aprueba.')}
     >
       <div className="flex flex-wrap gap-2">
         <Button
@@ -428,20 +442,20 @@ function DiscoverySection({ selectedId, modelsEnabled }: { selectedId: string | 
           onClick={() => (searching ? void discovery.refetch() : setSearching(true))}
         >
           <Search aria-hidden />
-          {searching ? 'Buscar otra vez' : 'Buscar instalaciones'}
+          {searching ? t('Buscar otra vez') : t('Buscar instalaciones')}
         </Button>
       </div>
       {discovery.isError ? (
-        <ErrorState title="No se pudo buscar" message={message(discovery.error, 'Error desconocido.')} onRetry={() => void discovery.refetch()} />
+        <ErrorState title={t('No se pudo buscar')} message={message(discovery.error, t('Error desconocido.'))} onRetry={() => void discovery.refetch()} />
       ) : null}
       {discovery.data ? (
         <div className="space-y-3">
           {discovery.data.runtimes.length === 0 ? (
             <p className="text-[12px] text-muted">
-              No se encontró ningún ComfyUI en las ubicaciones conocidas. Configura uno en este equipo y vuelve a buscar.
+              {t('No se encontró ningún ComfyUI en las ubicaciones conocidas. Configura uno en este equipo y vuelve a buscar.')}
             </p>
           ) : (
-            <ul className="space-y-2" aria-label="Instalaciones encontradas">
+            <ul className="space-y-2" aria-label={t('Instalaciones encontradas')}>
               {discovery.data.runtimes.map((runtime) => (
                 <RuntimeRow key={runtime.id} runtime={runtime} selected={runtime.id === selectedId} />
               ))}
@@ -449,8 +463,8 @@ function DiscoverySection({ selectedId, modelsEnabled }: { selectedId: string | 
           )}
           {discovery.data.roots.length > 0 ? (
             <div className="space-y-2">
-              <h4 className="eyebrow">Carpetas de modelos</h4>
-              <ul className="space-y-2" aria-label="Carpetas de modelos encontradas">
+              <h4 className="eyebrow">{t('Carpetas de modelos')}</h4>
+              <ul className="space-y-2" aria-label={t('Carpetas de modelos encontradas')}>
                 {discovery.data.roots.map((root) => (
                   <RootRow key={root.id} root={root} selectedId={selectedId} downloading={downloading} />
                 ))}
@@ -464,19 +478,20 @@ function DiscoverySection({ selectedId, modelsEnabled }: { selectedId: string | 
 }
 
 function RemoteNotice() {
+  useT()
   return (
     <div role="note" className="space-y-2 rounded-2xl border border-white/10 bg-ink-850 p-4">
       <p className="flex items-center gap-2 text-[14px] font-semibold text-fg">
         <MonitorSmartphone className="size-4 text-accent" aria-hidden />
-        Solo desde el propio equipo
+        {t('Solo desde el propio equipo')}
       </p>
       <p className="text-[12px] leading-relaxed text-muted">
-        Estos controles arrancan el motor y abren carpetas o el navegador <strong className="text-fg">en el Windows del servidor</strong>.
-        Por seguridad solo responden cuando Studio se abre en ese equipo (localhost); desde la red o el teléfono quedan
-        desactivados a propósito.
+        {t('Estos controles arrancan el motor y abren carpetas o el navegador')}{' '}
+        <strong className="text-fg">{t('en el Windows del servidor')}</strong>
+        {t('. Por seguridad solo responden cuando Studio se abre en ese equipo (localhost); desde la red o el teléfono quedan desactivados a propósito.')}
       </p>
       <p className="text-[12px] leading-relaxed text-muted">
-        Para usarlos, abre Studio en el navegador del propio servidor. Generar, Modelos y Plantilla siguen funcionando aquí.
+        {t('Para usarlos, abre Studio en el navegador del propio servidor. Generar, Modelos y Plantilla siguen funcionando aquí.')}
       </p>
     </div>
   )
@@ -484,6 +499,7 @@ function RemoteNotice() {
 
 /** Installation · ComfyUI engine · folders. Every action is an explicit button. */
 export function WorkstationPanel({ local = isLocalContext() }: { local?: boolean } = {}) {
+  useT()
   const features = useFeatures()
   const config = useConfig()
   const status = useWorkstationStatus(local)
@@ -497,16 +513,16 @@ export function WorkstationPanel({ local = isLocalContext() }: { local?: boolean
       {status.isLoading ? (
         <p role="status" className="flex items-center gap-2 text-[12px] text-muted">
           <Loader2 className="size-4 animate-spin" aria-hidden />
-          Leyendo el estado del equipo…
+          {t('Leyendo el estado del equipo…')}
         </p>
       ) : status.isError ? (
-        <ErrorState title="No se pudo leer el estado" message={message(status.error, 'Error desconocido.')} onRetry={() => void status.refetch()} retrying={status.isFetching} />
+        <ErrorState title={t('No se pudo leer el estado')} message={message(status.error, t('Error desconocido.'))} onRetry={() => void status.refetch()} retrying={status.isFetching} />
       ) : status.data ? (
         <>
           <div className="flex justify-end">
             <Button variant="ghost" size="sm" loading={status.isFetching} onClick={() => void status.refetch()}>
               <RefreshCw aria-hidden />
-              Actualizar estado
+              {t('Actualizar estado')}
             </Button>
           </div>
           <EngineSection status={status.data} comfyOnline={config.data?.capabilities.comfy_online ?? false} />
@@ -520,19 +536,20 @@ export function WorkstationPanel({ local = isLocalContext() }: { local?: boolean
 
 /** Header entry point; present only when this backend serves the workstation API. */
 export function WorkstationButton() {
+  useT()
   const features = useFeatures()
   if (!features.workstation) return null
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="Instalación: motor ComfyUI y carpetas" data-tour="workstation">
+        <Button variant="ghost" size="sm" aria-label={t('Instalación: motor ComfyUI y carpetas')} data-tour="workstation">
           <Server aria-hidden />
-          <span className="hidden md:inline">Instalación</span>
+          <span className="hidden md:inline">{t('Instalación')}</span>
         </Button>
       </DialogTrigger>
       <DialogPanel
-        title="Instalación · ComfyUI · Carpetas"
-        description="Estado del motor que renderiza, qué instalación usa este equipo y sus carpetas. Nada se arranca, descarga ni copia sin que lo pidas."
+        title={t('Instalación · ComfyUI · Carpetas')}
+        description={t('Estado del motor que renderiza, qué instalación usa este equipo y sus carpetas. Nada se arranca, descarga ni copia sin que lo pidas.')}
         className="w-[min(46rem,calc(100vw-1.5rem))]"
       >
         <WorkstationPanel />

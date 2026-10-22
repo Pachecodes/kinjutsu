@@ -1,3 +1,4 @@
+import { t, useT } from '../../i18n'
 import { cn } from '../../lib/cn'
 import {
   FRAME_STEP,
@@ -21,6 +22,7 @@ const RULER_MAX = 719
  * outside it is a visible, deliberate act.
  */
 export function TimelineStrip({ options }: { options: LengthOption[] }) {
+  useT()
   const length = useComposer((state) => state.length)
   const method = useComposer((state) => state.method)
   const continuityEnabled = useComposer((state) => state.continuity.auto_split)
@@ -36,12 +38,12 @@ export function TimelineStrip({ options }: { options: LengthOption[] }) {
     <div className="space-y-2" data-tour="duration">
       <div className="flex items-baseline justify-between gap-2">
         <span className="flex items-center gap-1">
-          <span className="eyebrow">Duración</span>
-          <InfoTip help={HELP.duration} label="Duración" />
+          <span className="eyebrow">{t('Duración')}</span>
+          <InfoTip help={HELP.duration} label={t('Duración')} />
         </span>
         <span className="tabular text-[11px] text-muted">
           <span className={cn('font-semibold', native ? 'text-fg' : 'text-warn')}>{formatSecondsEs(seconds)}</span>
-          <span className="text-faint"> · {length} frames · 24 fps</span>
+          <span className="text-faint">{t(' · {length} frames · 24 fps', { length })}</span>
         </span>
       </div>
 
@@ -61,7 +63,7 @@ export function TimelineStrip({ options }: { options: LengthOption[] }) {
             type="button"
             disabled={premiumFixed}
             onClick={() => setLength(option.frames)}
-            aria-label={`${formatSecondsEs(option.seconds)} · ${option.frames} frames`}
+            aria-label={t('{duration} · {frames} frames', { duration: formatSecondsEs(option.seconds), frames: option.frames })}
             aria-pressed={length === option.frames}
             className={cn(
               'absolute top-1 h-8 -translate-x-1/2 rounded-lg px-1.5 text-[10px] font-bold tabular transition-colors',
@@ -80,36 +82,42 @@ export function TimelineStrip({ options }: { options: LengthOption[] }) {
         min={5}
         max={RULER_MAX}
         step={FRAME_STEP}
-        aria-label="Duración en frames"
-        aria-valuetext={`${length} frames, ${formatSecondsEs(seconds)}`}
+        aria-label={t('Duración en frames')}
+        aria-valuetext={t('{length} frames, {duration}', { length, duration: formatSecondsEs(seconds) })}
         disabled={premiumFixed}
         onValueChange={([next]) => setLength(next)}
       />
       <p className="text-[11px] leading-snug text-faint">
-        La franja verde es la ventana entrenada ({TRAINED_FRAME_MIN}–{TRAINED_FRAME_MAX} frames ·{' '}
-        {formatSecondsEs(lengthToSeconds(TRAINED_FRAME_MIN))}–{formatSecondsEs(lengthToSeconds(TRAINED_FRAME_MAX))}). Solo
-        valen longitudes 17k+5: el control salta de 17 en 17 frames.
+        {t(
+          'La franja verde es la ventana entrenada ({min}–{max} frames · {minDuration}–{maxDuration}). Solo valen longitudes 17k+5: el control salta de 17 en 17 frames.',
+          {
+            min: TRAINED_FRAME_MIN,
+            max: TRAINED_FRAME_MAX,
+            minDuration: formatSecondsEs(lengthToSeconds(TRAINED_FRAME_MIN)),
+            maxDuration: formatSecondsEs(lengthToSeconds(TRAINED_FRAME_MAX)),
+          },
+        )}
       </p>
 
       {premiumFixed ? (
         <p className="text-[11px] leading-snug text-accent">
-          Premium 2× Refine3 está verificado a 124 frames / 5,17 s; la duración queda fija por seguridad en la RTX 4090.
+          {t('Premium 2× Refine3 está verificado a 124 frames / 5,17 s; la duración queda fija por seguridad en la RTX 4090.')}
         </p>
       ) : null}
       {hasGuide ? (
         <p className="text-[11px] leading-snug text-muted">
-          Con guía alineada, la guía debe tener exactamente esta duración. Si cambias la duración, prepara la guía de nuevo.
+          {t('Con guía alineada, la guía debe tener exactamente esta duración. Si cambias la duración, prepara la guía de nuevo.')}
         </p>
       ) : null}
 
       {!native && !continuityEnabled ? (
         <p className="text-[11px] leading-snug text-warn">
-          Fuera de la ventana entrenada de H3. La calidad no está probada y el render puede ser muy lento.
+          {t('Fuera de la ventana entrenada de H3. La calidad no está probada y el render puede ser muy lento.')}
         </p>
       ) : null}
       {!native && continuityEnabled && !hasGuide ? (
         <p className="text-[11px] leading-snug text-accent">
-          Más larga que una ventana entrenada: la continuidad automática la dividirá en ventanas.
+          {t('Más larga que una ventana entrenada: la continuidad automática la dividirá en ventanas.')}
         </p>
       ) : null}
     </div>

@@ -3,6 +3,7 @@ import { useId, useState } from 'react'
 
 import { useFeatures } from '../../hooks/features'
 import { useCachedConfig } from '../../hooks/queries'
+import { t, useT } from '../../i18n'
 import { isGuideSwapPreset } from '../../lib/curation'
 import { cn } from '../../lib/cn'
 import { HELP } from '../../lib/help'
@@ -106,6 +107,7 @@ export function PromptBuilder() {
 }
 
 function LocalPromptBuilder() {
+  useT()
   const [open, setOpen] = useState(false)
   const [fields, setFields] = useState<PromptFields>(EMPTY_FIELDS)
   const mode = useComposer((state) => state.mode)
@@ -132,29 +134,29 @@ function LocalPromptBuilder() {
       <DialogTrigger asChild>
         <button type="button" className="chip min-h-9 py-1.5" data-tour="prompt-builder">
           <LayoutTemplate className="size-3.5" aria-hidden />
-          Plantilla
+          {t('Plantilla')}
         </button>
       </DialogTrigger>
       <DialogPanel
-        title="Plantilla de prompt"
-        description="Ordena tus palabras en un prompt. Sin IA: no mira tus imágenes ni reescribe nada. No genera."
+        title={t('Plantilla de prompt')}
+        description={t('Ordena tus palabras en un prompt. Sin IA: no mira tus imágenes ni reescribe nada. No genera.')}
         className="w-[min(40rem,calc(100vw-1.5rem))]"
       >
         <div className="space-y-4">
           <p className="flex items-center gap-1.5 text-[11px] text-faint">
-            <InfoTip help={HELP.promptBuilder} label="Plantilla de prompt" />
-            Todo queda editable en el prompt después de aplicarlo.
+            <InfoTip help={HELP.promptBuilder} label={t('Plantilla de prompt')} />
+            {t('Todo queda editable en el prompt después de aplicarlo.')}
           </p>
 
           {swap ? (
             <>
               <p className="rounded-xl border border-white/[0.06] bg-ink-950/60 px-3 py-2 text-[12px] leading-snug text-muted">
-                La guía alineada controla escena, pose, ropa y cámara. Aquí solo añades dirección para el personaje de{' '}
-                <span className="font-mono text-accent">&lt;Picture 1&gt;</span> después del texto de la receta.
+                {t('La guía alineada controla escena, pose, ropa y cámara. Aquí solo añades dirección para el personaje de')}{' '}
+                <span className="font-mono text-accent">&lt;Picture 1&gt;</span> {t('después del texto de la receta.')}
               </p>
               {!swapPromptReady(prompt) ? (
                 <div className="rounded-xl border border-warn/35 bg-warn-soft/40 px-3 py-2 text-[12px] text-warn">
-                  <p>El prompt debe empezar por body_swap: y nombrar &lt;Picture 1&gt;.</p>
+                  <p>{t('El prompt debe empezar por body_swap: y nombrar <Picture 1>.')}</p>
                   {recipePrompt ? (
                     <Button
                       variant="outline"
@@ -163,26 +165,26 @@ function LocalPromptBuilder() {
                       onClick={() => setPrompt(recipePrompt)}
                     >
                       <RotateCcw aria-hidden />
-                      Restaurar el texto de la receta
+                      {t('Restaurar el texto de la receta')}
                     </Button>
                   ) : null}
                 </div>
               ) : null}
               <TextField
-                label="Detalles del personaje"
+                label={t('Detalles del personaje')}
                 value={fields.subject}
                 onChange={(subject) => set({ subject })}
-                placeholder="p. ej. pelo rizado castaño, pecas, mirada serena"
+                placeholder={t('p. ej. pelo rizado castaño, pecas, mirada serena')}
                 multiline
               />
-              <ChipGroup label="Luz y ambiente" options={LIGHT_OPTIONS} value={fields.light} onChange={(light) => set({ light })} />
-              <TextField label="Sonido" value={fields.sound} onChange={(sound) => set({ sound })} placeholder="p. ej. ambiente de salón, risa suave" />
+              <ChipGroup label={t('Luz y ambiente')} options={LIGHT_OPTIONS} value={fields.light} onChange={(light) => set({ light })} />
+              <TextField label={t('Sonido')} value={fields.sound} onChange={(sound) => set({ sound })} placeholder={t('p. ej. ambiente de salón, risa suave')} />
             </>
           ) : (
             <>
               {tags.length > 0 ? (
                 <p className="text-[11px] text-faint">
-                  Nombra tus referencias en el sujeto o la acción:{' '}
+                  {t('Nombra tus referencias en el sujeto o la acción:')}{' '}
                   {tags.map((tag) => (
                     <button
                       key={tag}
@@ -196,34 +198,34 @@ function LocalPromptBuilder() {
                 </p>
               ) : null}
               <div className="grid gap-3 sm:grid-cols-2">
-                <TextField label="Sujeto" value={fields.subject} onChange={(subject) => set({ subject })} placeholder="Quién o qué aparece" />
-                <TextField label="Acción" value={fields.action} onChange={(action) => set({ action })} placeholder="Qué hace" />
+                <TextField label={t('Sujeto')} value={fields.subject} onChange={(subject) => set({ subject })} placeholder={t('Quién o qué aparece')} />
+                <TextField label={t('Acción')} value={fields.action} onChange={(action) => set({ action })} placeholder={t('Qué hace')} />
               </div>
-              <TextField label="Escena" value={fields.scene} onChange={(scene) => set({ scene })} placeholder="Dónde ocurre" />
-              <ChipGroup label="Cámara" options={CAMERA_OPTIONS} value={fields.camera} onChange={(camera) => set({ camera })} />
-              <ChipGroup label="Luz y ambiente" options={LIGHT_OPTIONS} value={fields.light} onChange={(light) => set({ light })} />
-              <TextField label="Sonido" value={fields.sound} onChange={(sound) => set({ sound })} placeholder="Lo que se oye: diálogo, ambiente, música" />
+              <TextField label={t('Escena')} value={fields.scene} onChange={(scene) => set({ scene })} placeholder={t('Dónde ocurre')} />
+              <ChipGroup label={t('Cámara')} options={CAMERA_OPTIONS} value={fields.camera} onChange={(camera) => set({ camera })} />
+              <ChipGroup label={t('Luz y ambiente')} options={LIGHT_OPTIONS} value={fields.light} onChange={(light) => set({ light })} />
+              <TextField label={t('Sonido')} value={fields.sound} onChange={(sound) => set({ sound })} placeholder={t('Lo que se oye: diálogo, ambiente, música')} />
             </>
           )}
 
-          <section aria-label="Vista previa" className="space-y-1.5">
-            <h3 className="eyebrow">Vista previa</h3>
+          <section aria-label={t('Vista previa')} className="space-y-1.5">
+            <h3 className="eyebrow">{t('Vista previa')}</h3>
             <p className="min-h-12 whitespace-pre-wrap rounded-xl border border-white/[0.06] bg-ink-950 px-3 py-2 text-[12px] leading-relaxed text-fg">
-              {result || <span className="text-faint">Rellena algún campo para ver el resultado.</span>}
+              {result || <span className="text-faint">{t('Rellena algún campo para ver el resultado.')}</span>}
             </p>
           </section>
 
           <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/[0.06] pt-3">
             <Button variant="ghost" size="sm" onClick={() => setFields(EMPTY_FIELDS)}>
-              Vaciar campos
+              {t('Vaciar campos')}
             </Button>
             {!swap ? (
               <Button variant="outline" size="sm" disabled={!result} onClick={() => apply('replace')}>
-                {prompt.trim() ? 'Sustituir mi prompt' : 'Usar como prompt'}
+                {prompt.trim() ? t('Sustituir mi prompt') : t('Usar como prompt')}
               </Button>
             ) : null}
             <Button variant="primary" size="sm" disabled={!result} onClick={() => apply('append')}>
-              Añadir al final del prompt
+              {t('Añadir al final del prompt')}
             </Button>
           </div>
         </div>

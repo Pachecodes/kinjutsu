@@ -7,6 +7,7 @@ import { useComposer } from '../state/composer'
 import { useUi } from '../state/ui'
 import { useAssetIndex, useJobMutations } from './queries'
 import { copyText } from './useCopy'
+import { t } from '../i18n'
 
 /**
  * The five take actions the product promises, in one place so the stage and the
@@ -27,16 +28,16 @@ export function useTakeActions() {
         const { missing } = loadRequest(request, assets)
         setMobileView('compose')
         toast({
-          title: keepSeed ? 'Receta y semilla cargadas' : 'Receta cargada con semilla nueva',
+          title: keepSeed ? t('Receta y semilla cargadas') : t('Receta cargada con semilla nueva'),
           description:
             missing > 0
-              ? `${missing === 1 ? 'No se pudo restaurar 1 referencia' : `No se pudieron restaurar ${missing} referencias`}: ya no están en la biblioteca.`
+              ? (missing === 1 ? t('No se pudo restaurar 1 referencia: ya no está en la biblioteca.') : t('No se pudieron restaurar {n} referencias: ya no están en la biblioteca.', { n: missing }))
               : undefined,
           tone: missing > 0 ? 'info' : 'success',
         })
       } catch (error) {
         toast({
-          title: 'No se pudo reutilizar esta toma',
+          title: t('No se pudo reutilizar esta toma'),
           description: error instanceof ApiError ? error.message : undefined,
           tone: 'error',
         })
@@ -49,8 +50,8 @@ export function useTakeActions() {
     async (job: JobOut) => {
       const ok = await copyText(job.prompt)
       toast({
-        title: ok ? 'Prompt copiado' : 'No se pudo copiar el prompt',
-        description: ok ? undefined : 'El navegador bloqueó el portapapeles en esta dirección.',
+        title: ok ? t('Prompt copiado') : t('No se pudo copiar el prompt'),
+        description: ok ? undefined : t('El navegador bloqueó el portapapeles en esta dirección.'),
         tone: ok ? 'success' : 'error',
       })
     },
@@ -66,10 +67,10 @@ export function useTakeActions() {
     async (job: JobOut) => {
       try {
         await setHidden.mutateAsync({ jobId: job.id, hidden: !job.hidden })
-        toast({ title: job.hidden ? 'Toma visible de nuevo' : 'Toma oculta', tone: 'info' })
+        toast({ title: job.hidden ? t('Toma visible de nuevo') : t('Toma oculta'), tone: 'info' })
       } catch (error) {
         toast({
-          title: 'No se pudo actualizar esta toma',
+          title: t('No se pudo actualizar esta toma'),
           description: error instanceof ApiError ? error.message : undefined,
           tone: 'error',
         })
@@ -83,11 +84,11 @@ export function useTakeActions() {
       try {
         await remove.mutateAsync(job.id)
         selectJob(null)
-        toast({ title: 'Toma eliminada', description: 'Se borraron el render y sus archivos.', tone: 'info' })
+        toast({ title: t('Toma eliminada'), description: t('Se borraron el render y sus archivos.'), tone: 'info' })
         return true
       } catch (error) {
         toast({
-          title: 'No se pudo eliminar esta toma',
+          title: t('No se pudo eliminar esta toma'),
           description: error instanceof ApiError ? error.message : undefined,
           tone: 'error',
         })
@@ -101,10 +102,10 @@ export function useTakeActions() {
     async (job: JobOut) => {
       try {
         await cancel.mutateAsync(job.id)
-        toast({ title: 'Cancelación enviada', description: 'Mira el escenario para saber si el cálculo llegó a detenerse.', tone: 'info' })
+        toast({ title: t('Cancelación enviada'), description: t('Mira el escenario para saber si el cálculo llegó a detenerse.'), tone: 'info' })
       } catch (error) {
         toast({
-          title: 'No se pudo cancelar esta toma',
+          title: t('No se pudo cancelar esta toma'),
           description: error instanceof ApiError ? error.message : undefined,
           tone: 'error',
         })

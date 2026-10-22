@@ -32,7 +32,7 @@ describe('AI Director prompt preview', () => {
 
     expect(useComposer.getState().prompt).toBe('Una astronauta camina por la luna')
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Enhanced prompt' })).toHaveTextContent(
+    expect(screen.getByRole('region', { name: 'Prompt propuesto' })).toHaveTextContent(
       '[SCENE] An astronaut crosses the moon.',
     )
     expect(calls.find((call) => call.url.includes('/api/director/enhance'))).toMatchObject({
@@ -40,10 +40,10 @@ describe('AI Director prompt preview', () => {
       body: { mode: 'text', prompt: 'Una astronauta camina por la luna', length: 124, references: [] },
     })
 
-    await user.click(screen.getByRole('button', { name: /apply enhanced prompt/i }))
+    await user.click(screen.getByRole('button', { name: /aplicar prompt propuesto/i }))
     expect(useComposer.getState().prompt).toBe('[SCENE]\nAn astronaut crosses the moon.')
 
-    await user.click(screen.getByRole('button', { name: /undo ai director/i }))
+    await user.click(screen.getByRole('button', { name: /deshacer ai director/i }))
     expect(useComposer.getState().prompt).toBe('Una astronauta camina por la luna')
   })
 
@@ -108,20 +108,20 @@ describe('AI Director prompt preview', () => {
 
     renderWithProviders(<PromptComposer />)
     await user.click(screen.getByRole('button', { name: /gpu prompt chat/i }))
-    expect(screen.getByText(/released automatically before h3 renders/i)).toBeInTheDocument()
-    expect(screen.getByText(/gemma sees 1 attached image/i)).toBeInTheDocument()
-    await user.type(screen.getByLabelText('Message'), 'Write the final prompt')
-    await user.click(screen.getByRole('button', { name: /send message to gemma/i }))
+    expect(screen.getByText(/se libera automáticamente antes de cada render de h3/i)).toBeInTheDocument()
+    expect(screen.getByText(/gemma ve 1 imagen adjunta/i)).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Mensaje'), 'Write the final prompt')
+    await user.click(screen.getByRole('button', { name: /enviar mensaje a gemma/i }))
 
     expect(await screen.findByText(/production-ready beach shot/i)).toBeInTheDocument()
     expect(calls.find((call) => call.url.includes('/api/director/chat'))?.body).toMatchObject({
       references: [{ asset_id: 'asset-1', kind: 'image', role: 'identity' }],
     })
-    await user.click(screen.getByRole('button', { name: /use as h3 prompt/i }))
+    await user.click(screen.getByRole('button', { name: /usar como prompt de h3/i }))
     expect(useComposer.getState().prompt).toBe('[SCENE]\nA production-ready beach shot.')
 
     await user.click(screen.getByRole('button', { name: /gpu prompt chat/i }))
     expect(within(screen.getByRole('dialog')).queryByText(/production-ready beach shot/i)).not.toBeInTheDocument()
-    expect(screen.getByText(/gemma sees 1 attached image/i)).toBeInTheDocument()
+    expect(screen.getByText(/gemma ve 1 imagen adjunta/i)).toBeInTheDocument()
   })
 })

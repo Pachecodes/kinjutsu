@@ -6,6 +6,7 @@ import type { JobOut } from '../../lib/types'
 import { ConfirmDialog } from '../ui/alert-dialog'
 import { Button } from '../ui/button'
 import { Tooltip } from '../ui/tooltip'
+import { t, useT } from '../../i18n'
 
 interface TakeActionsProps {
   job: JobOut
@@ -16,6 +17,7 @@ interface TakeActionsProps {
 
 /** Reutilizar · Copiar prompt · Descargar · Ocultar/Mostrar · Eliminar. */
 export function TakeActions({ job, size = 'sm', iconOnly = false }: TakeActionsProps) {
+  useT()
   const { reuseTake, copyPrompt, download, toggleHidden, deleteTake, pending } = useTakeActions()
   const [confirming, setConfirming] = useState(false)
 
@@ -27,66 +29,66 @@ export function TakeActions({ job, size = 'sm', iconOnly = false }: TakeActionsP
   return (
     <>
       <div className="flex flex-wrap items-center gap-1">
-        <Tooltip content="Carga la receta, referencias y semilla de esta toma en el compositor. No genera.">
+        <Tooltip content={t('Carga la receta, referencias y semilla de esta toma en el compositor. No genera.')}>
           <Button
             variant="outline"
             size={size}
             loading={pending.reuse}
             onClick={() => void reuseTake(job, true)}
-            aria-label="Reutilizar esta toma"
+            aria-label={t('Reutilizar esta toma')}
           >
             <RotateCcw aria-hidden />
-            {label('Reutilizar')}
+            {label(t('Reutilizar'))}
           </Button>
         </Tooltip>
 
-        <Tooltip content="Copia el prompt al portapapeles">
-          <Button variant="ghost" size={size} onClick={() => void copyPrompt(job)} aria-label="Copiar prompt">
+        <Tooltip content={t('Copia el prompt al portapapeles')}>
+          <Button variant="ghost" size={size} onClick={() => void copyPrompt(job)} aria-label={t('Copiar prompt')}>
             <Copy aria-hidden />
-            {label('Copiar prompt')}
+            {label(t('Copiar prompt'))}
           </Button>
         </Tooltip>
 
-        <Tooltip content={primaryOutput ? 'Descarga el archivo renderizado' : 'Esta toma no produjo archivo'}>
+        <Tooltip content={primaryOutput ? t('Descarga el archivo renderizado') : t('Esta toma no produjo archivo')}>
           <span>
             <Button
               variant="ghost"
               size={size}
               disabled={!primaryOutput}
               onClick={() => primaryOutput && download(primaryOutput.id)}
-              aria-label="Descargar toma"
+              aria-label={t('Descargar toma')}
             >
               <Download aria-hidden />
-              {label('Descargar')}
+              {label(t('Descargar'))}
             </Button>
           </span>
         </Tooltip>
 
-        <Tooltip content={job.hidden ? 'Volver a mostrar en la galería' : 'Ocultar de la galería (no borra nada)'}>
+        <Tooltip content={job.hidden ? t('Volver a mostrar en la galería') : t('Ocultar de la galería (no borra nada)')}>
           <Button
             variant="ghost"
             size={size}
             loading={pending.hidden}
             onClick={() => void toggleHidden(job)}
-            aria-label={job.hidden ? 'Mostrar toma' : 'Ocultar toma'}
+            aria-label={job.hidden ? t('Mostrar toma') : t('Ocultar toma')}
           >
             {job.hidden ? <Eye aria-hidden /> : <EyeOff aria-hidden />}
-            {label(job.hidden ? 'Mostrar' : 'Ocultar')}
+            {label(job.hidden ? t('Mostrar') : t('Ocultar'))}
           </Button>
         </Tooltip>
 
-        <Tooltip content={canDelete ? 'Elimina la toma y sus archivos' : 'Cancela la toma antes de eliminarla'}>
+        <Tooltip content={canDelete ? t('Elimina la toma y sus archivos') : t('Cancela la toma antes de eliminarla')}>
           <span>
             <Button
               variant="ghost"
               size={size}
               disabled={!canDelete}
               onClick={() => setConfirming(true)}
-              aria-label="Eliminar toma"
+              aria-label={t('Eliminar toma')}
               className="text-danger hover:bg-danger/10 hover:text-danger"
             >
               <Trash2 aria-hidden />
-              {label('Eliminar')}
+              {label(t('Eliminar'))}
             </Button>
           </span>
         </Tooltip>
@@ -95,20 +97,26 @@ export function TakeActions({ job, size = 'sm', iconOnly = false }: TakeActionsP
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
-        title="¿Eliminar esta toma?"
+        title={t('¿Eliminar esta toma?')}
         description={
           <>
             <span className="block">
-              {job.title ? `«${job.title}»` : 'Esta toma'} y {job.outputs.length}{' '}
-              {job.outputs.length === 1 ? 'archivo renderizado se borrarán' : 'archivos renderizados se borrarán'} del disco. No se puede deshacer.
+              {job.outputs.length === 1
+                ? t('{take} y 1 archivo renderizado se borrarán del disco. No se puede deshacer.', {
+                    take: job.title ? t('«{title}»', { title: job.title }) : t('Esta toma'),
+                  })
+                : t('{take} y {n} archivos renderizados se borrarán del disco. No se puede deshacer.', {
+                    take: job.title ? t('«{title}»', { title: job.title }) : t('Esta toma'),
+                    n: job.outputs.length,
+                  })}
             </span>
             <span className="mt-2 block text-xs text-faint">
-              La receta se va con ella: pulsa Reutilizar antes si quieres conservar los ajustes.
+              {t('La receta se va con ella: pulsa Reutilizar antes si quieres conservar los ajustes.')}
             </span>
           </>
         }
-        confirmLabel="Eliminar para siempre"
-        cancelLabel="Conservarla"
+        confirmLabel={t('Eliminar para siempre')}
+        cancelLabel={t('Conservarla')}
         busy={pending.remove}
         onConfirm={() => {
           void deleteTake(job).then((ok) => {

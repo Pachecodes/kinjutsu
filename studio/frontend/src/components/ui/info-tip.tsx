@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 
 import { cn } from '../../lib/cn'
 import type { HelpEntry } from '../../lib/help'
+import { t, useT } from '../../i18n'
 
 interface InfoTipProps {
   /** A help entry from `lib/help.ts`, or free content. */
@@ -24,12 +25,13 @@ function isEntry(help: InfoTipProps['help']): help is HelpEntry {
  * never the only place a blocking fact appears.
  */
 export function InfoTip({ help, label, className, side = 'top' }: InfoTipProps) {
+  useT()
   return (
     <TooltipPrimitive.Root>
       <TooltipPrimitive.Trigger asChild>
         <button
           type="button"
-          aria-label={`Ayuda: ${label}`}
+          aria-label={t('Ayuda: {label}', { label })}
           className={cn(
             'inline-flex size-5 shrink-0 items-center justify-center rounded-full text-faint transition-colors',
             'hover:bg-white/[0.08] hover:text-fg',
@@ -51,13 +53,13 @@ export function InfoTip({ help, label, className, side = 'top' }: InfoTipProps) 
               <span className="block">{help.what}</span>
               {help.when ? (
                 <span className="block text-muted">
-                  <span className="font-semibold text-fg">Cuándo tocarlo: </span>
+                  <span className="font-semibold text-fg">{t('Cuándo tocarlo: ')}</span>
                   {help.when}
                 </span>
               ) : null}
               {help.cost ? (
                 <span className="block text-warn">
-                  <span className="font-semibold">Coste / límite: </span>
+                  <span className="font-semibold">{t('Coste / límite: ')}</span>
                   {help.cost}
                 </span>
               ) : null}

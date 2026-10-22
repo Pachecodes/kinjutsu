@@ -9,8 +9,9 @@ import { Button } from '../ui/button'
 import { Dialog, DialogPanel, DialogTrigger } from '../ui/dialog'
 import { LazyVideo } from '../ui/lazy-video'
 import { EmptyState, ErrorState } from '../ui/states'
+import { localized, t, useT } from '../../i18n'
 
-const KIND_LABEL: Record<RefKind, string> = { image: 'Imagen', video: 'Vídeo', audio: 'Audio' }
+const KIND_LABEL: Record<RefKind, string> = localized(() => ({ image: t('Imagen'), video: t('Vídeo'), audio: t('Audio') }))
 
 /**
  * Everything already uploaded to this Studio. Picking an item adds it to the
@@ -18,6 +19,7 @@ const KIND_LABEL: Record<RefKind, string> = { image: 'Imagen', video: 'Vídeo', 
  * and no file is ever modified.
  */
 export function LibraryDialog({ trigger, kinds }: { trigger?: ReactNode; kinds?: RefKind[] }) {
+  useT()
   const [open, setOpen] = useState(false)
   const library = useAssets()
   const { addFromLibrary } = useReferenceIngest()
@@ -33,24 +35,24 @@ export function LibraryDialog({ trigger, kinds }: { trigger?: ReactNode; kinds?:
         {trigger ?? (
           <Button variant="outline" size="sm">
             <FolderOpen aria-hidden />
-            Biblioteca
+            {t('Biblioteca')}
           </Button>
         )}
       </DialogTrigger>
       <DialogPanel
-        title="Biblioteca de referencias"
-        description="Todo lo subido a este Studio. Elige un archivo para añadirlo a la toma actual; el original no se modifica."
+        title={t('Biblioteca de referencias')}
+        description={t('Todo lo subido a este Studio. Elige un archivo para añadirlo a la toma actual; el original no se modifica.')}
       >
         {library.isLoading ? (
-          <p className="text-xs text-faint">Cargando la biblioteca…</p>
+          <p className="text-xs text-faint">{t('Cargando la biblioteca…')}</p>
         ) : library.isError ? (
           <ErrorState
-            title="Biblioteca no disponible"
-            message="No se pudo cargar la biblioteca de referencias."
+            title={t('Biblioteca no disponible')}
+            message={t('No se pudo cargar la biblioteca de referencias.')}
             onRetry={() => void library.refetch()}
           />
         ) : items.length === 0 ? (
-          <EmptyState icon={ImagePlus} title="Nada subido todavía" body="Sube un archivo desde la bandeja para empezar." />
+          <EmptyState icon={ImagePlus} title={t('Nada subido todavía')} body={t('Sube un archivo desde la bandeja para empezar.')} />
         ) : (
           <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {items.map((asset) => (
@@ -58,7 +60,7 @@ export function LibraryDialog({ trigger, kinds }: { trigger?: ReactNode; kinds?:
                 <button
                   type="button"
                   onClick={() => pick(asset)}
-                  aria-label={`Añadir ${asset.original_name}`}
+                  aria-label={t('Añadir {name}', { name: asset.original_name })}
                   className="w-full overflow-hidden rounded-xl border border-white/[0.07] bg-ink-850 text-left transition-colors hover:border-accent/50"
                 >
                   <span className="block aspect-video bg-ink-950">
@@ -77,7 +79,7 @@ export function LibraryDialog({ trigger, kinds }: { trigger?: ReactNode; kinds?:
                     {KIND_LABEL[asset.kind]}
                     {asset.width && asset.height ? ` · ${asset.width}×${asset.height}` : ''}
                     {asset.duration_seconds !== null ? ` · ${formatSecondsEs(asset.duration_seconds)}` : ''}
-                    {asset.guide_provenance ? ' · guía preparada' : ''}
+                    {asset.guide_provenance ? t(' · guía preparada') : ''}
                   </span>
                 </button>
               </li>

@@ -1,6 +1,13 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterEach, vi } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
+
+import { useLocale } from '../i18n'
+
+// Existing specs read Spanish copy; English specs switch explicitly.
+beforeEach(() => {
+  useLocale.setState({ locale: 'es' })
+})
 
 afterEach(() => {
   cleanup()

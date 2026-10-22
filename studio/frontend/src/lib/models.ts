@@ -5,48 +5,49 @@
  */
 
 import type { DownloadStatus, ManagedModel, ModelDownload } from './types'
+import { formatDecimal, localized, t } from '../i18n'
 
 export type ModelCategory = 'diffusion_models' | 'text_encoders' | 'vae' | 'loras' | 'other'
 
-export const CATEGORY_LABEL: Record<ModelCategory, string> = {
-  diffusion_models: 'Modelo base',
-  text_encoders: 'Codificador de prompt',
+export const CATEGORY_LABEL: Record<ModelCategory, string> = localized(() => ({
+  diffusion_models: t('Modelo base'),
+  text_encoders: t('Codificador de prompt'),
   vae: 'VAE',
   loras: 'LoRA',
-  other: 'Otro',
-}
+  other: t('Otro'),
+}))
 
 interface KnownModel {
   label: string
   purpose: string
 }
 
-const KNOWN: Record<string, KnownModel> = {
+const KNOWN: Record<string, KnownModel> = localized(() => ({
   'diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors': {
     label: 'H3 Ref2VA INT8',
-    purpose: 'El generador de vídeo para referencias y Character Swap.',
+    purpose: t('El generador de vídeo para referencias y Character Swap.'),
   },
   'text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors': {
     label: 'Qwen3-VL Standard',
-    purpose: 'Convierte el prompt en condicionamiento. No genera vídeo.',
+    purpose: t('Convierte el prompt en condicionamiento. No genera vídeo.'),
   },
   'vae/minimax_h3_video_vae_fp16.safetensors': {
-    label: 'VAE de vídeo',
-    purpose: 'Decodifica los latentes en fotogramas.',
+    label: t('VAE de vídeo'),
+    purpose: t('Decodifica los latentes en fotogramas.'),
   },
   'vae/minimax_h3_audio_vae_fp32.safetensors': {
-    label: 'VAE de audio',
-    purpose: 'Decodifica el sonido que escribe H3.',
+    label: t('VAE de audio'),
+    purpose: t('Decodifica el sonido que escribe H3.'),
   },
   'loras/latest_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors': {
     label: 'Turbo8 Ref2VA',
-    purpose: 'LoRA de 8 pasos de la receta Character Swap aprobada.',
+    purpose: t('LoRA de 8 pasos de la receta Character Swap aprobada.'),
   },
   'loras/minimax_h3_character_swap_v1.1_ref2va_fro.safetensors': {
     label: 'BFS Character Swap v1.1',
-    purpose: 'LoRA que cambia la identidad con la guía alineada.',
+    purpose: t('LoRA que cambia la identidad con la guía alineada.'),
   },
-}
+}))
 
 export function modelCategory(target: string): ModelCategory {
   const head = target.split('/')[0]
@@ -64,7 +65,7 @@ export function describeModel(
   return {
     // The backend's own label wins when it sends one.
     label: model.label || known?.label || modelFileName(model.target),
-    purpose: known?.purpose ?? 'Archivo fijado en el manifiesto del paquete.',
+    purpose: known?.purpose ?? t('Archivo fijado en el manifiesto del paquete.'),
     category: modelCategory(model.target),
     file: modelFileName(model.target),
   }
@@ -102,22 +103,22 @@ export function modelState(model: ManagedModel, job: ModelDownload | undefined, 
   return 'missing'
 }
 
-export const STATE_LABEL: Record<ModelState, string> = {
-  verified: 'Instalado y verificado',
-  reused: 'Reutilizado (verificado)',
-  missing: 'Falta',
-  queued: 'En cola',
-  downloading: 'Descargando',
-  verifying: 'Verificando SHA256',
-  cancelling: 'Cancelación solicitada',
-  cancelled: 'Cancelado · parcial conservado',
+export const STATE_LABEL: Record<ModelState, string> = localized(() => ({
+  verified: t('Instalado y verificado'),
+  reused: t('Reutilizado (verificado)'),
+  missing: t('Falta'),
+  queued: t('En cola'),
+  downloading: t('Descargando'),
+  verifying: t('Verificando SHA256'),
+  cancelling: t('Cancelación solicitada'),
+  cancelled: t('Cancelado · parcial conservado'),
   error: 'Error',
-  installed_now: 'Instalado · reinicia Comfy',
-}
+  installed_now: t('Instalado · reinicia Comfy'),
+}))
 
 export function formatGiB(bytes: number): string {
   const gib = bytes / 1024 ** 3
-  if (gib >= 1) return `${gib.toFixed(gib >= 10 ? 1 : 2).replace('.', ',')} GB`
+  if (gib >= 1) return `${formatDecimal(gib, gib >= 10 ? 1 : 2)} GB`
   return `${Math.round(bytes / 1024 ** 2)} MB`
 }
 

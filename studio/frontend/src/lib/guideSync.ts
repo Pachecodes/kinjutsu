@@ -10,6 +10,7 @@
 
 import { FPS, isValidLength, lengthToSeconds } from './frames'
 import type { ReferenceSlot } from './references'
+import { formatDecimal, t } from '../i18n'
 
 export interface FrameSpec {
   width: number
@@ -121,7 +122,7 @@ export function guideStatus(
 }
 
 function seconds(value: number): string {
-  return `${value.toFixed(2).replace('.', ',')} s`
+  return `${formatDecimal(value, 2)} s`
 }
 
 /**
@@ -130,18 +131,18 @@ function seconds(value: number): string {
  */
 export function describeMismatch(status: GuideStatus): string | null {
   if (status.ok) return null
-  if (!status.guide) return 'No se pudo leer el tamaño de la guía. Prepárala de nuevo desde el original.'
+  if (!status.guide) return t('No se pudo leer el tamaño de la guía. Prepárala de nuevo desde el original.')
   const parts: string[] = []
   if (!status.framesMatch) {
     parts.push(
       status.guide.frames === null
-        ? `la salida pide ${status.output.frames} frames (${seconds(status.output.seconds)}) y no se pudo leer la duración de la guía`
-        : `la salida pide ${status.output.frames} frames (${seconds(status.output.seconds)}) pero la guía tiene ${status.guide.frames} (${seconds(status.guide.seconds ?? 0)})`,
+        ? t('la salida pide {frames} frames ({seconds}) y no se pudo leer la duración de la guía', { frames: status.output.frames, seconds: seconds(status.output.seconds) })
+        : t('la salida pide {frames} frames ({seconds}) pero la guía tiene {guideFrames} ({guideSeconds})', { frames: status.output.frames, seconds: seconds(status.output.seconds), guideFrames: status.guide.frames, guideSeconds: seconds(status.guide.seconds ?? 0) }),
     )
   }
   if (!status.sizeMatch) {
     parts.push(
-      `la salida es ${status.output.width}×${status.output.height} y la guía ${status.guide.width}×${status.guide.height}`,
+      t('la salida es {w}×{h} y la guía {gw}×{gh}', { w: status.output.width, h: status.output.height, gw: status.guide.width, gh: status.guide.height }),
     )
   }
   const sentence = parts.join('; y ')
@@ -150,5 +151,5 @@ export function describeMismatch(status: GuideStatus): string | null {
 
 export function formatSecondsEs(value: number | null | undefined, digits = 2): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return '—'
-  return `${value.toFixed(digits).replace('.', ',')} s`
+  return `${formatDecimal(value, digits)} s`
 }

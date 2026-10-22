@@ -35,6 +35,7 @@ import type {
   StudioConfig,
   ValidationResponse,
 } from './types'
+import { t } from '../i18n'
 
 export class ApiError extends Error {
   readonly status: number
@@ -66,15 +67,15 @@ function describe(body: ErrorBody | null, status: number): { message: string; co
   if (Array.isArray(detail)) {
     const first = detail[0]
     const where = first?.loc?.filter((part) => part !== 'body').join('.')
-    const msg = first?.msg ?? 'The request was rejected.'
+    const msg = first?.msg ?? t('La solicitud fue rechazada.')
     return { message: where ? `${where}: ${msg}` : msg, code: null }
   }
   if (detail && typeof detail === 'object') {
-    return { message: detail.message ?? 'The request was rejected.', code: detail.code ?? null }
+    return { message: detail.message ?? t('La solicitud fue rechazada.'), code: detail.code ?? null }
   }
   const issue = body?.issues?.[0]
   if (issue) return { message: issue.message, code: issue.code }
-  return { message: `Request failed (${status}).`, code: null }
+  return { message: t('La solicitud falló ({status}).', { status }), code: null }
 }
 
 async function readError(response: Response): Promise<ApiError> {
@@ -100,7 +101,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       },
     })
   } catch {
-    throw new ApiError('The Studio backend is unreachable. Is it running on this machine?', {
+    throw new ApiError(t('El backend del Studio no responde. ¿Está en marcha en este equipo?'), {
       status: 0,
       code: 'network_error',
     })
@@ -231,8 +232,8 @@ export const api = {
         reject(new ApiError(message, { status: xhr.status, code }))
       }
       xhr.onerror = () =>
-        reject(new ApiError('The upload could not reach the Studio backend.', { status: 0, code: 'network_error' }))
-      xhr.onabort = () => reject(new ApiError('Upload canceled.', { status: 0, code: 'aborted' }))
+        reject(new ApiError(t('La subida no llegó al backend del Studio.'), { status: 0, code: 'network_error' }))
+      xhr.onabort = () => reject(new ApiError(t('Subida cancelada.'), { status: 0, code: 'aborted' }))
 
       options.signal?.addEventListener('abort', () => xhr.abort(), { once: true })
       xhr.send(form)

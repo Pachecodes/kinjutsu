@@ -2,6 +2,7 @@ import { FolderOpen, ImagePlus, Loader2, Music, Plus, Video, X } from 'lucide-re
 import { useRef, useState, type DragEvent } from 'react'
 
 import { ACCEPT_ALL, ACCEPT_BY_KIND, useReferenceIngest } from '../../hooks/useReferenceIngest'
+import { t, useT } from '../../i18n'
 import { isSwapPreset } from '../../lib/curation'
 import { cn } from '../../lib/cn'
 import { ROLE_HELP } from '../../lib/help'
@@ -36,6 +37,7 @@ function Thumb({ slot }: { slot: ReferenceSlot }) {
 }
 
 function FilledTile({ slot, tag, label }: { slot: ReferenceSlot; tag: string | null; label?: string }) {
+  useT()
   const removeReference = useComposer((state) => state.removeReference)
   const setInspectorTab = useUi((state) => state.setInspectorTab)
   const setMobileView = useUi((state) => state.setMobileView)
@@ -49,7 +51,7 @@ function FilledTile({ slot, tag, label }: { slot: ReferenceSlot; tag: string | n
           setInspectorTab('references')
           setMobileView('refs')
         }}
-        aria-label={`${roleLabel}: ${slot.asset.original_name}. Ver detalles`}
+        aria-label={t('{role}: {name}. Ver detalles', { role: roleLabel, name: slot.asset.original_name })}
         className="block w-full overflow-hidden rounded-xl border border-white/[0.08] bg-ink-950 text-left transition-colors hover:border-accent/50"
       >
         <span className="relative block aspect-square">
@@ -61,7 +63,7 @@ function FilledTile({ slot, tag, label }: { slot: ReferenceSlot; tag: string | n
           ) : null}
           {slot.role === 'aligned_guide' ? (
             <span className="absolute left-1 top-1 rounded-md bg-ink-950/85 px-1 py-0.5 text-[9px] font-semibold text-accent">
-              guía
+              {t('guía')}
             </span>
           ) : null}
         </span>
@@ -72,7 +74,7 @@ function FilledTile({ slot, tag, label }: { slot: ReferenceSlot; tag: string | n
       <button
         type="button"
         onClick={() => removeReference(slot.uid)}
-        aria-label={`Quitar ${slot.asset.original_name}`}
+        aria-label={t('Quitar {name}', { name: slot.asset.original_name })}
         className="absolute -right-1.5 -top-1.5 flex size-6 items-center justify-center rounded-full border border-white/10 bg-ink-800 text-muted shadow-lift transition-colors hover:bg-danger hover:text-fg"
       >
         <X className="size-3" aria-hidden />
@@ -90,6 +92,7 @@ function EmptyTile({
   onPick: (kind: RefKind) => void
   disabled: boolean
 }) {
+  useT()
   const Icon = spec.kind === 'video' ? Video : spec.kind === 'audio' ? Music : ImagePlus
   return (
     <li className="w-[6.5rem] shrink-0">
@@ -98,7 +101,11 @@ function EmptyTile({
         data-focus={`slot-${spec.key}`}
         disabled={disabled}
         onClick={() => onPick(spec.kind)}
-        aria-label={`Subir ${spec.label.toLowerCase()}${spec.required ? ' (obligatorio)' : ' (opcional)'}`}
+        aria-label={
+          spec.required
+            ? t('Subir {label} (obligatorio)', { label: spec.label.toLowerCase() })
+            : t('Subir {label} (opcional)', { label: spec.label.toLowerCase() })
+        }
         className={cn(
           'flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed px-1.5 text-center transition-colors',
           spec.required
@@ -121,6 +128,7 @@ function EmptyTile({
  * a word; free References mode shows the `<Picture i>` numbering the builder uses.
  */
 export function ReferenceTray() {
+  useT()
   const mode = useComposer((state) => state.mode)
   const presetId = useComposer((state) => state.presetId)
   const omni = useComposer((state) => state.method === 'fast_h3_omni_8step')
@@ -165,7 +173,7 @@ export function ReferenceTray() {
 
   return (
     <section
-      aria-label="Referencias de la toma"
+      aria-label={t('Referencias de la toma')}
       data-tour="reference-tray"
       onDragOver={(event) => {
         if (!event.dataTransfer.types.includes('Files')) return
@@ -186,7 +194,7 @@ export function ReferenceTray() {
         accept={ACCEPT_ALL}
         className="sr-only"
         tabIndex={-1}
-        aria-label="Subir archivos de referencia"
+        aria-label={t('Subir archivos de referencia')}
         onChange={(event) => {
           if (event.target.files?.length) void ingest(event.target.files)
           event.target.value = ''
@@ -207,7 +215,7 @@ export function ReferenceTray() {
             trigger={
               <button type="button" className="chip min-h-8 px-2.5 py-1 text-[10px]">
                 <FolderOpen className="size-3.5" aria-hidden />
-                Biblioteca
+                {t('Biblioteca')}
               </button>
             }
           />
@@ -218,7 +226,7 @@ export function ReferenceTray() {
         <div role="status" className="mb-2 space-y-1">
           <p className="flex items-center gap-2 text-[11px] text-muted">
             <Loader2 className="size-3.5 animate-spin" aria-hidden />
-            <span className="truncate">Subiendo {progress.name}…</span>
+            <span className="truncate">{t('Subiendo {name}…', { name: progress.name })}</span>
             <span className="tabular ml-auto">{Math.round(progress.fraction * 100)}%</span>
           </p>
           <div className="h-1 overflow-hidden rounded-full bg-ink-700">
@@ -248,8 +256,8 @@ export function ReferenceTray() {
             spec={{
               key: 'add',
               kind: kinds[0],
-              label: specs.length === 0 ? 'Añadir' : 'Otra ref.',
-              hint: kinds.length > 1 ? 'Imagen, vídeo o audio' : 'Imagen',
+              label: specs.length === 0 ? t('Añadir') : t('Otra ref.'),
+              hint: kinds.length > 1 ? t('Imagen, vídeo o audio') : t('Imagen'),
               required: false,
             }}
             onPick={() => pick()}
@@ -260,7 +268,7 @@ export function ReferenceTray() {
 
       {specs.length > 0 && placed.some(({ slot }) => !slot) ? (
         <p className="mt-2 flex items-center gap-1 text-[11px] text-faint">
-          Arrastra archivos aquí o pulsa un hueco.
+          {t('Arrastra archivos aquí o pulsa un hueco.')}
           {placed.find(({ slot }) => !slot)?.spec.roles[0] ? (
             <InfoTip
               help={ROLE_HELP[placed.find(({ slot }) => !slot)!.spec.roles[0]]}
@@ -274,7 +282,7 @@ export function ReferenceTray() {
         <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl">
           <span className="flex items-center gap-2 rounded-full border border-accent/30 bg-ink-950/90 px-3 py-1.5 text-[11px] font-bold text-accent">
             <Plus className="size-3.5" />
-            Suelta para añadir
+            {t('Suelta para añadir')}
           </span>
         </div>
       ) : null}

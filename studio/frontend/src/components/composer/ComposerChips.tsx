@@ -1,5 +1,6 @@
 import { BookOpen, ChevronDown, Clock, Dices, Gauge, Lock, RectangleHorizontal, SlidersHorizontal, Unlock } from 'lucide-react'
 
+import { t, useT } from '../../i18n'
 import { cn } from '../../lib/cn'
 import {
   ASPECT_PRESETS,
@@ -27,8 +28,9 @@ function ChipLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function RecipeChip({ presets, comfyOnline, wide = false }: { presets: Preset[]; comfyOnline: boolean; wide?: boolean }) {
+  useT()
   const presetId = useComposer((state) => state.presetId)
-  const label = presets.find((preset) => preset.id === presetId)?.label ?? 'Sin receta'
+  const label = presets.find((preset) => preset.id === presetId)?.label ?? t('Sin receta')
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -36,18 +38,18 @@ export function RecipeChip({ presets, comfyOnline, wide = false }: { presets: Pr
           <button
             type="button"
             data-tour="recipes"
-            aria-label={`Receta: ${label}. Cambiar receta`}
+            aria-label={t('Receta: {label}. Cambiar receta', { label })}
             className="flex min-h-12 w-full items-center gap-2.5 rounded-2xl border border-white/[0.07] bg-ink-900 px-3 py-2 text-left transition-colors hover:border-white/20"
           >
             <BookOpen className="size-4 shrink-0 text-accent" aria-hidden />
             <span className="min-w-0 flex-1">
-              <span className="eyebrow block">Receta</span>
+              <span className="eyebrow block">{t('Receta')}</span>
               <span className="block truncate text-[13px] font-semibold text-fg">{label}</span>
             </span>
             <ChevronDown className="size-4 shrink-0 opacity-60" aria-hidden />
           </button>
         ) : (
-          <button type="button" className={cn('chip', presetId && 'text-fg')} aria-label={`Receta: ${label}`}>
+          <button type="button" className={cn('chip', presetId && 'text-fg')} aria-label={t('Receta: {label}', { label })}>
             <BookOpen className="size-3.5 text-accent" aria-hidden />
             <ChipLabel>{label}</ChipLabel>
             <ChevronDown className="size-3 opacity-60" aria-hidden />
@@ -62,6 +64,7 @@ export function RecipeChip({ presets, comfyOnline, wide = false }: { presets: Pr
 }
 
 export function DurationChip({ capabilities }: { capabilities: CapabilityResponse }) {
+  useT()
   const length = useComposer((state) => state.length)
   const width = useComposer((state) => state.width)
   const height = useComposer((state) => state.height)
@@ -74,7 +77,14 @@ export function DurationChip({ capabilities }: { capabilities: CapabilityRespons
         <button
           type="button"
           className={cn('chip', mismatch && 'border-warn/40 text-warn')}
-          aria-label={`Duración: ${formatSecondsEs(lengthToSeconds(length))}, ${length} frames${mismatch ? '. No coincide con la guía' : ''}`}
+          aria-label={
+            mismatch
+              ? t('Duración: {duration}, {length} frames. No coincide con la guía', {
+                  duration: formatSecondsEs(lengthToSeconds(length)),
+                  length,
+                })
+              : t('Duración: {duration}, {length} frames', { duration: formatSecondsEs(lengthToSeconds(length)), length })
+          }
         >
           <Clock className="size-3.5" aria-hidden />
           <span className="tabular">
@@ -91,6 +101,7 @@ export function DurationChip({ capabilities }: { capabilities: CapabilityRespons
 }
 
 export function FrameChip() {
+  useT()
   const width = useComposer((state) => state.width)
   const height = useComposer((state) => state.height)
   const autoRatio = useComposer((state) => state.auto_ratio)
@@ -101,7 +112,7 @@ export function FrameChip() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className="chip" aria-label={`Formato: ${width} por ${height}`}>
+        <button type="button" className="chip" aria-label={t('Formato: {width} por {height}', { width, height })}>
           <RectangleHorizontal className={cn('size-3.5', height > width && 'rotate-90')} aria-hidden />
           <span className="tabular">
             {width}×{height}
@@ -111,10 +122,10 @@ export function FrameChip() {
       </PopoverTrigger>
       <PopoverContent className="space-y-3">
         <div className="flex items-center gap-1">
-          <span className="eyebrow">Formato</span>
-          <InfoTip help={HELP.frame} label="Formato" />
+          <span className="eyebrow">{t('Formato')}</span>
+          <InfoTip help={HELP.frame} label={t('Formato')} />
         </div>
-        <div role="radiogroup" aria-label="Formato" className="grid grid-cols-2 gap-1.5">
+        <div role="radiogroup" aria-label={t('Formato')} className="grid grid-cols-2 gap-1.5">
           {ASPECT_PRESETS.map((preset) => {
             const active = aspect?.id === preset.id
             return (
@@ -136,7 +147,7 @@ export function FrameChip() {
         </div>
         <div className="grid grid-cols-2 gap-2">
           <label className="space-y-1">
-            <span className="eyebrow block">Ancho</span>
+            <span className="eyebrow block">{t('Ancho')}</span>
             <Input
               type="number"
               inputMode="numeric"
@@ -144,13 +155,13 @@ export function FrameChip() {
               max={DIMENSION_MAX}
               step={DIMENSION_STEP}
               value={width}
-              aria-label="Ancho en píxeles"
+              aria-label={t('Ancho en píxeles')}
               onChange={(event) => setFrameSize(Number(event.target.value) || DIMENSION_MIN, height)}
               className="text-[16px] md:text-sm"
             />
           </label>
           <label className="space-y-1">
-            <span className="eyebrow block">Alto</span>
+            <span className="eyebrow block">{t('Alto')}</span>
             <Input
               type="number"
               inputMode="numeric"
@@ -158,19 +169,21 @@ export function FrameChip() {
               max={DIMENSION_MAX}
               step={DIMENSION_STEP}
               value={height}
-              aria-label="Alto en píxeles"
+              aria-label={t('Alto en píxeles')}
               onChange={(event) => setFrameSize(width, Number(event.target.value) || DIMENSION_MIN)}
               className="text-[16px] md:text-sm"
             />
           </label>
         </div>
-        <p className="text-[10px] text-faint">Múltiplos de {DIMENSION_STEP} px, máximo {DIMENSION_MAX}.</p>
+        <p className="text-[10px] text-faint">
+          {t('Múltiplos de {step} px, máximo {max}.', { step: DIMENSION_STEP, max: DIMENSION_MAX })}
+        </p>
         <div className="flex items-center justify-between gap-3 text-xs">
           <span className="flex items-center gap-1 text-fg">
-            Ajustar a la primera imagen
-            <InfoTip help={HELP.autoRatio} label="Ajustar a la primera imagen" />
+            {t('Ajustar a la primera imagen')}
+            <InfoTip help={HELP.autoRatio} label={t('Ajustar a la primera imagen')} />
           </span>
-          <Switch checked={autoRatio} onCheckedChange={setAutoRatio} aria-label="Ajustar proporción a la primera imagen" />
+          <Switch checked={autoRatio} onCheckedChange={setAutoRatio} aria-label={t('Ajustar proporción a la primera imagen')} />
         </div>
       </PopoverContent>
     </Popover>
@@ -178,12 +191,13 @@ export function FrameChip() {
 }
 
 export function MethodChip({ capabilities }: { capabilities: CapabilityResponse }) {
+  useT()
   const method = useComposer((state) => state.method)
   const info = capabilities.methods.find((entry) => entry.id === method)
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className={cn('chip', info?.experimental && 'text-warn')} aria-label={`Método: ${info?.label ?? method}`}>
+        <button type="button" className={cn('chip', info?.experimental && 'text-warn')} aria-label={t('Método: {method}', { method: info?.label ?? method })}>
           <Gauge className="size-3.5" aria-hidden />
           <ChipLabel>{info?.label ?? method}</ChipLabel>
           <ChevronDown className="size-3 opacity-60" aria-hidden />
@@ -191,8 +205,8 @@ export function MethodChip({ capabilities }: { capabilities: CapabilityResponse 
       </PopoverTrigger>
       <PopoverContent className="max-h-[min(34rem,70dvh)] w-[min(26rem,calc(100vw-1.5rem))] overflow-y-auto">
         <div className="mb-2 flex items-center gap-1 px-2.5">
-          <span className="eyebrow">Método / acelerador</span>
-          <InfoTip help={HELP.method} label="Método" />
+          <span className="eyebrow">{t('Método / acelerador')}</span>
+          <InfoTip help={HELP.method} label={t('Método')} />
         </div>
         <MethodPicker methods={capabilities.methods} comfyOnline={capabilities.comfy_online} />
       </PopoverContent>
@@ -201,28 +215,29 @@ export function MethodChip({ capabilities }: { capabilities: CapabilityResponse 
 }
 
 export function SeedChip() {
+  useT()
   const seed = useComposer((state) => state.seed)
   const setSeed = useComposer((state) => state.setSeed)
   const randomizeSeed = useComposer((state) => state.randomizeSeed)
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className={cn('chip', seed !== null && 'text-fg')} aria-label={seed === null ? 'Semilla aleatoria' : `Semilla fija ${seed}`}>
+        <button type="button" className={cn('chip', seed !== null && 'text-fg')} aria-label={seed === null ? t('Semilla aleatoria') : t('Semilla fija {seed}', { seed })}>
           {seed === null ? <Unlock className="size-3.5" aria-hidden /> : <Lock className="size-3.5 text-accent" aria-hidden />}
-          <span className="tabular">{seed === null ? 'Semilla' : String(seed).slice(0, 8)}</span>
+          <span className="tabular">{seed === null ? t('Semilla') : String(seed).slice(0, 8)}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="space-y-3">
         <div className="flex items-center gap-1">
-          <span className="eyebrow">Semilla</span>
-          <InfoTip help={HELP.seed} label="Semilla" />
+          <span className="eyebrow">{t('Semilla')}</span>
+          <InfoTip help={HELP.seed} label={t('Semilla')} />
         </div>
         <label className="flex items-center justify-between gap-3 text-xs text-fg">
-          Fijar semilla
+          {t('Fijar semilla')}
           <Switch
             checked={seed !== null}
             onCheckedChange={(locked) => (locked ? randomizeSeed() : setSeed(null))}
-            aria-label="Fijar semilla"
+            aria-label={t('Fijar semilla')}
           />
         </label>
         {seed !== null ? (
@@ -231,7 +246,7 @@ export function SeedChip() {
               type="number"
               min={0}
               value={seed}
-              aria-label="Semilla"
+              aria-label={t('Semilla')}
               onChange={(event) => {
                 const next = Number(event.target.value)
                 setSeed(Number.isFinite(next) && next >= 0 ? Math.floor(next) : 0)
@@ -241,14 +256,14 @@ export function SeedChip() {
             <button
               type="button"
               onClick={randomizeSeed}
-              aria-label="Tirar una semilla nueva"
+              aria-label={t('Tirar una semilla nueva')}
               className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-white/10 text-muted hover:bg-white/[0.06] hover:text-fg"
             >
               <Dices className="size-4" aria-hidden />
             </button>
           </div>
         ) : (
-          <p className="text-[11px] text-faint">Cada toma usa una semilla nueva.</p>
+          <p className="text-[11px] text-faint">{t('Cada toma usa una semilla nueva.')}</p>
         )}
       </PopoverContent>
     </Popover>
@@ -256,6 +271,7 @@ export function SeedChip() {
 }
 
 export function AdvancedChip() {
+  useT()
   const setInspectorTab = useUi((state) => state.setInspectorTab)
   return (
     <button
@@ -268,7 +284,7 @@ export function AdvancedChip() {
       }}
     >
       <SlidersHorizontal className="size-3.5" aria-hidden />
-      Avanzado
+      {t('Avanzado')}
     </button>
   )
 }

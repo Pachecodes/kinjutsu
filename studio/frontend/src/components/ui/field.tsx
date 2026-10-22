@@ -4,6 +4,7 @@ import { forwardRef, type InputHTMLAttributes, type ReactNode, type TextareaHTML
 import { cn } from '../../lib/cn'
 import type { HelpEntry } from '../../lib/help'
 import { InfoTip } from './info-tip'
+import { t, useT } from '../../i18n'
 
 export const Label = forwardRef<
   React.ComponentRef<typeof LabelPrimitive.Root>,
@@ -64,12 +65,13 @@ interface FieldProps {
 
 /** Label + control + optional hint, laid out the same way everywhere. */
 export function Field({ label, htmlFor, hint, aside, help, children, className }: FieldProps) {
+  useT()
   return (
     <div className={cn('space-y-1.5', className)}>
       <div className="flex min-h-[18px] items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1">
           <Label htmlFor={htmlFor}>{label}</Label>
-          {help ? <InfoTip help={help} label={typeof label === 'string' ? label : 'este control'} /> : null}
+          {help ? <InfoTip help={help} label={typeof label === 'string' ? label : t('este control')} /> : null}
         </span>
         {aside ? <span className="tabular text-[11px] text-faint">{aside}</span> : null}
       </div>

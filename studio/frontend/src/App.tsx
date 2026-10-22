@@ -7,6 +7,7 @@ import { Composer } from './components/composer/Composer'
 import { RecipeChip } from './components/composer/ComposerChips'
 import { ModeSwitch } from './components/composer/ModeSwitch'
 import { Gallery } from './components/gallery/Gallery'
+import { LanguageSwitch } from './components/i18n/LanguageSwitch'
 import { ModelsButton } from './components/models/ModelsDialog'
 import { WorkstationButton } from './components/workstation/WorkstationDialog'
 import { RecipeList } from './components/rail/RecipeRail'
@@ -20,6 +21,7 @@ import { EmptyState, ErrorState, Skeleton } from './components/ui/states'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
 import { useConfig, useJob, useJobs } from './hooks/queries'
 import { useIsDesktop } from './hooks/useMediaQuery'
+import { localizedList, t, useT } from './i18n'
 import { BRAND } from './lib/brand'
 import { cn } from './lib/cn'
 import type { JobOut } from './lib/types'
@@ -55,24 +57,27 @@ function useStageJob(): { job: JobOut | null; loading: boolean; hasAnyTake: bool
   }
 }
 
-const MOBILE_TABS: { id: MobileView; label: string; icon: typeof Play }[] = [
-  { id: 'compose', label: 'Crear', icon: Wand2 },
-  { id: 'stage', label: 'Escenario', icon: Play },
-  { id: 'refs', label: 'Refs', icon: Layers },
-  { id: 'gallery', label: 'Galería', icon: Images },
-]
+const MOBILE_TABS: { id: MobileView; label: string; icon: typeof Play }[] = localizedList(() => [
+  { id: 'compose', label: t('Crear'), icon: Wand2 },
+  { id: 'stage', label: t('Escenario'), icon: Play },
+  { id: 'refs', label: t('Refs'), icon: Layers },
+  { id: 'gallery', label: t('Galería'), icon: Images },
+])
 
 function GuideButton() {
+  useT()
   const openTour = useUi((state) => state.openTour)
   return (
-    <Button variant="ghost" size="sm" onClick={() => openTour(0)} aria-label="Abrir la guía interactiva">
+    <Button variant="ghost" size="sm" onClick={() => openTour(0)} aria-label={t('Abrir la guía interactiva')}>
       <Compass aria-hidden />
-      <span className="hidden sm:inline">Guía</span>
+      <span className="hidden sm:inline">{t('Guía')}</span>
     </Button>
   )
 }
 
 export default function App() {
+  // Re-render the whole tree when the language changes.
+  useT()
   const config = useConfig()
   const initialized = useRef(false)
   useEffect(() => {
@@ -99,7 +104,7 @@ export default function App() {
 
   if (config.isLoading) {
     return (
-      <div className="flex h-full flex-col gap-3 p-4" aria-busy="true" aria-label={`Cargando ${BRAND.product}`}>
+      <div className="flex h-full flex-col gap-3 p-4" aria-busy="true" aria-label={t('Cargando {product}', { product: BRAND.product })}>
         <Skeleton className="h-12 w-full" />
         <div className="flex min-h-0 flex-1 gap-3">
           <Skeleton className="hidden w-72 lg:block" />
@@ -116,12 +121,12 @@ export default function App() {
         <div className="w-full max-w-md space-y-4">
           <EmptyState
             icon={PanelLeft}
-            title={`${BRAND.product} no encuentra su backend`}
-            body="La API del Studio no respondió. Arranca el backend en esta máquina y vuelve a intentarlo."
+            title={t('{product} no encuentra su backend', { product: BRAND.product })}
+            body={t('La API del Studio no respondió. Arranca el backend en esta máquina y vuelve a intentarlo.')}
           />
           <ErrorState
-            title="Backend sin respuesta"
-            message={config.error instanceof Error ? config.error.message : 'Error desconocido.'}
+            title={t('Backend sin respuesta')}
+            message={config.error instanceof Error ? config.error.message : t('Error desconocido.')}
             onRetry={() => void config.refetch()}
             retrying={config.isFetching}
           />
@@ -142,19 +147,19 @@ export default function App() {
         <TabsTrigger value="references">
           <span className="flex items-center gap-1.5">
             <Layers className="size-3.5" aria-hidden />
-            Referencias
+            {t('Referencias')}
           </span>
         </TabsTrigger>
         <TabsTrigger value="settings">
           <span className="flex items-center gap-1.5">
             <SlidersHorizontal className="size-3.5" aria-hidden />
-            Avanzado
+            {t('Avanzado')}
           </span>
         </TabsTrigger>
         <TabsTrigger value="activity">
           <span className="flex items-center gap-1.5">
             <ScrollText className="size-3.5" aria-hidden />
-            Actividad
+            {t('Actividad')}
           </span>
         </TabsTrigger>
       </TabsList>
@@ -179,6 +184,7 @@ export default function App() {
           <ModelsButton />
           <GuideButton />
           <HealthPill />
+          <LanguageSwitch />
         </div>
       </header>
 
@@ -186,9 +192,9 @@ export default function App() {
 
       {isDesktop ? (
         <div className="flex min-h-0 flex-1">
-          <aside aria-label="Recetas" className="relative w-[19rem] shrink-0 space-y-4 overflow-y-auto border-r border-white/[0.06] p-3">
+          <aside aria-label={t('Recetas')} className="relative w-[19rem] shrink-0 space-y-4 overflow-y-auto border-r border-white/[0.06] p-3">
             <TourOffer />
-            <h2 className="eyebrow px-1 text-muted">Recetas</h2>
+            <h2 className="eyebrow px-1 text-muted">{t('Recetas')}</h2>
             <RecipeList presets={presets} comfyOnline={capabilities.comfy_online} />
           </aside>
 
@@ -203,7 +209,7 @@ export default function App() {
             </div>
           </main>
 
-          <aside aria-label="Inspector" className="relative flex w-[23rem] shrink-0 flex-col overflow-hidden border-l border-white/[0.06]">
+          <aside aria-label={t('Inspector')} className="relative flex w-[23rem] shrink-0 flex-col overflow-hidden border-l border-white/[0.06]">
             {inspector}
           </aside>
         </div>
@@ -216,16 +222,16 @@ export default function App() {
                 <RecipeChip presets={presets} comfyOnline={capabilities.comfy_online} wide />
                 <ModeSwitch modes={capabilities.modes} comfyOnline={capabilities.comfy_online} />
                 <Composer config={config.data} capabilities={capabilities} />
-                <section aria-label="Avanzado" className="panel p-3">
-                  <h2 className="eyebrow mb-2 text-muted">Avanzado</h2>
+                <section aria-label={t('Avanzado')} className="panel p-3">
+                  <h2 className="eyebrow mb-2 text-muted">{t('Avanzado')}</h2>
                   <SettingsPanel capabilities={capabilities} />
                 </section>
               </div>
             ) : mobileView === 'stage' ? (
               <div className="space-y-4">
                 <OutputStage job={stage.job} loading={stage.loading} hasAnyTake={stage.hasAnyTake} />
-                <section aria-label="Actividad" className="panel p-3">
-                  <h2 className="eyebrow mb-2">Actividad</h2>
+                <section aria-label={t('Actividad')} className="panel p-3">
+                  <h2 className="eyebrow mb-2">{t('Actividad')}</h2>
                   <ActivityPanel job={stage.job} />
                 </section>
               </div>
@@ -239,7 +245,7 @@ export default function App() {
           </main>
 
           <nav
-            aria-label="Secciones"
+            aria-label={t('Secciones')}
             className="safe-pb sticky bottom-0 grid shrink-0 grid-cols-4 border-t border-white/[0.06] bg-ink-900"
           >
             {MOBILE_TABS.map((tab) => {
@@ -261,13 +267,13 @@ export default function App() {
                     <Icon className="size-5" aria-hidden />
                     {tab.id === 'stage' && rendering ? (
                       <span className="absolute -right-1 -top-0.5 size-2 rounded-full bg-accent animate-pulse-ring">
-                        <span className="sr-only"> (generando)</span>
+                        <span className="sr-only"> {t('(generando)')}</span>
                       </span>
                     ) : null}
                     {badge !== null ? (
                       <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-accent px-1 text-center text-[9px] font-black leading-4 text-accent-ink">
                         {badge}
-                        <span className="sr-only"> referencias</span>
+                        <span className="sr-only"> {t('referencias')}</span>
                       </span>
                     ) : null}
                   </span>

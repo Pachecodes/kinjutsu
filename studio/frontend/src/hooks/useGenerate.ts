@@ -8,6 +8,7 @@ import { useComposer } from '../state/composer'
 import { useUi } from '../state/ui'
 import { useToast } from '../components/ui/toast'
 import { useJobMutations } from './queries'
+import { t } from '../i18n'
 
 export interface GenerateGate {
   /** null when the take can be submitted. */
@@ -20,20 +21,20 @@ export function generateGate(
   capabilities: CapabilityResponse | undefined,
   issues: Issue[],
 ): GenerateGate {
-  if (!request.prompt.trim()) return { blockedReason: 'Escribe un prompt primero.' }
+  if (!request.prompt.trim()) return { blockedReason: t('Escribe un prompt primero.') }
   const omni = request.method === 'fast_h3_omni_8step'
-  if (omni && request.mode !== 'ref2va') return { blockedReason: 'Omni solo admite escenas en Referencias (Ref2VA).' }
-  if (omni && !capabilities?.methods.some((entry) => entry.id === request.method)) return { blockedReason: 'Omni aún no tiene disponibilidad confirmada. Revisa Instalar o configurar Omni.' }
+  if (omni && request.mode !== 'ref2va') return { blockedReason: t('Omni solo admite escenas en Referencias (Ref2VA).') }
+  if (omni && !capabilities?.methods.some((entry) => entry.id === request.method)) return { blockedReason: t('Omni aún no tiene disponibilidad confirmada. Revisa Instalar o configurar Omni.') }
   if (!omni && capabilities && !capabilities.comfy_online) {
     return { blockedReason: `H3 Lab (ComfyUI en ${capabilities.comfy_url}) no responde. Puedes seguir preparando la toma.` }
   }
   const mode = capabilities?.modes.find((entry) => entry.id === request.mode)
   if (!omni && mode && !mode.available) {
-    return { blockedReason: mode.unavailable_reason ?? 'Esta tarea no está disponible ahora mismo.' }
+    return { blockedReason: mode.unavailable_reason ?? t('Esta tarea no está disponible ahora mismo.') }
   }
   const method = capabilities?.methods.find((entry) => entry.id === request.method)
   if (method && !method.available) {
-    return { blockedReason: method.unavailable_reason ?? 'Este método no está disponible ahora mismo.' }
+    return { blockedReason: method.unavailable_reason ?? t('Este método no está disponible ahora mismo.') }
   }
   const error = issues.find((issue) => issue.severity === 'error')
   if (error) return { blockedReason: blockingSentence(error) }
@@ -54,15 +55,15 @@ export function useGenerate() {
         setActiveJob(job.id)
         setMobileView('stage')
         if (job.status === 'failed') {
-          toast({ title: 'ComfyUI rechazó la toma', description: job.error ?? undefined, tone: 'error' })
+          toast({ title: t('ComfyUI rechazó la toma'), description: job.error ?? undefined, tone: 'error' })
         } else {
-          toast({ title: 'Toma en cola', description: job.title ?? `Generando en ${BRAND.machine}. Sigue el progreso en el escenario.`, tone: 'success' })
+          toast({ title: t('Toma en cola'), description: job.title ?? t('Generando en {machine}. Sigue el progreso en el escenario.', { machine: BRAND.machine }), tone: 'success' })
         }
         return job
       } catch (error) {
-        const message = error instanceof ApiError ? error.message : 'No se pudo poner la toma en cola.'
+        const message = error instanceof ApiError ? error.message : t('No se pudo poner la toma en cola.')
         setNotice(message)
-        toast({ title: 'No se pudo poner en cola', description: message, tone: 'error' })
+        toast({ title: t('No se pudo poner en cola'), description: message, tone: 'error' })
         return null
       }
     },

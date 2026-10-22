@@ -2,6 +2,7 @@ import { AlertCircle, AlertTriangle, Info, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
 
 import { useCachedConfig } from '../../hooks/queries'
+import { localized, t, useT } from '../../i18n'
 import { cn } from '../../lib/cn'
 import { issueGuidance, sortIssues, type IssueFix } from '../../lib/issues'
 import { missingTags, withTagsAppended } from '../../lib/references'
@@ -21,17 +22,17 @@ const TONE: Record<Severity, string> = {
   info: 'border-white/[0.07] bg-ink-850 text-muted',
 }
 
-const SEVERITY_LABEL: Record<Severity, string> = { error: 'Bloquea', warning: 'Aviso', info: 'Nota' }
+const SEVERITY_LABEL: Record<Severity, string> = localized(() => ({ error: t('Bloquea'), warning: t('Aviso'), info: t('Nota') }))
 
-const FIX_LABEL: Record<IssueFix, string> = {
-  disable_continuity: 'Apagar continuidad',
-  guide_recipe: 'Usar Quality + Default',
-  mute_guide: 'Quitar sonido de la guía',
-  restore_swap_prompt: 'Restaurar texto de la receta',
-  append_tags: 'Añadir etiquetas',
-  open_references: 'Ver referencias',
-  open_advanced: 'Abrir Avanzado',
-}
+const FIX_LABEL: Record<IssueFix, string> = localized(() => ({
+  disable_continuity: t('Apagar continuidad'),
+  guide_recipe: t('Usar Quality + Default'),
+  mute_guide: t('Quitar sonido de la guía'),
+  restore_swap_prompt: t('Restaurar texto de la receta'),
+  append_tags: t('Añadir etiquetas'),
+  open_references: t('Ver referencias'),
+  open_advanced: t('Abrir Avanzado'),
+}))
 
 /** Applies a fix that is one unambiguous state change; anything else only navigates. */
 function useIssueFix() {
@@ -79,6 +80,7 @@ function useIssueFix() {
  * is never rewritten; a known code adds a plain headline and, when safe, a fix.
  */
 export function IssueList({ issues, className, id }: { issues: Issue[]; className?: string; id?: string }) {
+  useT()
   const applyFix = useIssueFix()
   const presetId = useComposer((state) => state.presetId)
   if (issues.length === 0) return null

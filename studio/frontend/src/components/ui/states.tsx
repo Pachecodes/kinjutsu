@@ -3,6 +3,7 @@ import type { ComponentType, ReactNode } from 'react'
 
 import { cn } from '../../lib/cn'
 import { Button } from './button'
+import { t, useT } from '../../i18n'
 
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn('animate-pulse rounded bg-ink-800', className)} aria-hidden />
@@ -42,7 +43,8 @@ interface ErrorStateProps {
   className?: string
 }
 
-export function ErrorState({ title = 'Algo salió mal', message, onRetry, retrying, className }: ErrorStateProps) {
+export function ErrorState({ title = t('Algo salió mal'), message, onRetry, retrying, className }: ErrorStateProps) {
+  useT()
   return (
     <div
       role="alert"
@@ -58,7 +60,7 @@ export function ErrorState({ title = 'Algo salió mal', message, onRetry, retryi
       {onRetry ? (
         <Button variant="outline" size="sm" onClick={onRetry} loading={retrying}>
           <RefreshCw aria-hidden />
-          Reintentar
+          {t('Reintentar')}
         </Button>
       ) : null}
     </div>
