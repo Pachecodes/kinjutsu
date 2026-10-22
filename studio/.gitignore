@@ -8,5 +8,5 @@ __pycache__/
 .pytest_cache/
 .test-temp/
 data/
-frontend/dist/
+# Prebuilt frontend/dist is shipped for agent-free first launch.
 *.log
