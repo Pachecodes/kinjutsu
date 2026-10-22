@@ -391,12 +391,22 @@ export interface ManagedModel {
   reused: boolean
   revision: string
   repo: string
+  /** Newer backends: readable name, role and the recipes that need this file. */
+  label?: string
+  role?: string
+  required_by?: string[]
+  /** Bytes of a `.part` kept from an interrupted download (0 when none). */
+  partial_bytes?: number
+  /** False when the partial is larger than the pinned size: inspect, do not resume. */
+  partial_valid_size?: boolean
 }
 
 export interface ModelCatalog {
   manifest_sha256: string
   models: ManagedModel[]
   license_documents: string[]
+  /** Free DISK space where models are written (not VRAM). */
+  free_bytes?: number
 }
 
 export type DownloadStatus = 'queued' | 'downloading' | 'verifying' | 'installed' | 'cancelled' | 'error'
@@ -496,3 +506,78 @@ export interface BuildPromptResponse {
   requires_agent: false
   submits_render: false
 }
+
+/* ---------------------------------------------------------------------------
+ * Local workstation control plane (docs/WORKSTATION-API.md). Loopback only:
+ * remote/Tailnet clients get 403 by design. No route accepts paths or commands.
+ * ------------------------------------------------------------------------- */
+
+export type WorkstationState =
+  | 'configuration_required'
+  | 'online'
+  | 'unhealthy'
+  | 'port_conflict'
+  | 'stopped'
+  | 'starting'
+  | 'configuration_changed'
+  | 'launch_unverified'
+
+export type FolderKind = 'models' | 'loras' | 'outputs'
+
+export interface WorkstationStatus {
+  state: WorkstationState
+  selected_id: string | null
+  label: string | null
+  url: string | null
+  capabilities: {
+    start: boolean
+    open_comfy: boolean
+    select: boolean
+    folders: Record<FolderKind, boolean>
+  }
+  automatic_downloads: boolean
+  stop_supported: boolean
+  generation_binding: 'not_selected' | 'matches' | 'different' | 'unknown'
+}
+
+export interface RuntimeCandidate {
+  id: string
+  label: string
+  location: string
+  /** Comfy answered health during this discovery. Not ownership or approval. */
+  online: boolean
+  approved: boolean
+  configuration_required: boolean
+}
+
+export interface RootCandidate {
+  id: string
+  label: string
+  location: string
+  approved: boolean
+  /** Null for roots already authorized in model-roots.json. */
+  runtime_id: string | null
+}
+
+export interface WorkstationDiscovery {
+  runtimes: RuntimeCandidate[]
+  roots: RootCandidate[]
+  limits: { max_roots: number; max_depth: number; max_results: number; budget_seconds: number }
+  automatic_downloads: false
+}
+
+export interface SelectRuntimeResult {
+  selected_id: string
+  selected: boolean
+  generation_routing_changed: false
+}
+
+export interface SelectRootResult {
+  root_id: string
+  verified_models: number
+  reused: boolean
+  external_comfy_mapping_changed: false
+  restart_required: boolean
+}
+
+export type StartComfyResult = { state: 'online' | 'starting'; reused: boolean; log?: string }

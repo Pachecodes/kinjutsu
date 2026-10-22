@@ -7,6 +7,12 @@
 
 import type {
   AssetOut,
+  FolderKind,
+  SelectRootResult,
+  SelectRuntimeResult,
+  StartComfyResult,
+  WorkstationDiscovery,
+  WorkstationStatus,
   BuildPromptResponse,
   ModelCatalog,
   ModelDownload,
@@ -164,6 +170,22 @@ export const api = {
     request<ModelDownload>(`/api/models/${encodeURIComponent(modelId)}/install`, json({ license_acknowledged: true })),
   cancelModel: (modelId: string) =>
     request<{ id: string; cancel_requested: boolean }>(`/api/models/${encodeURIComponent(modelId)}/cancel`, { method: 'POST' }),
+  /** Plain text from the backend allowlist; render as text only, never as HTML. */
+  licenseText: async (name: string) => {
+    const response = await fetch(`/api/models/licenses/${encodeURIComponent(name)}`, { headers: { Accept: 'text/plain' } })
+    if (!response.ok) throw await readError(response)
+    return response.text()
+  },
+  workstationStatus: () => request<WorkstationStatus>('/api/workstation/status'),
+  workstationDiscover: () => request<WorkstationDiscovery>('/api/workstation/discover'),
+  selectRuntime: (candidateId: string) =>
+    request<SelectRuntimeResult>('/api/workstation/select', json({ candidate_id: candidateId, acknowledge: true })),
+  selectRoot: (candidateId: string) =>
+    request<SelectRootResult>('/api/workstation/roots/select', json({ candidate_id: candidateId, acknowledge: true })),
+  startComfy: () => request<StartComfyResult>('/api/workstation/comfy/start', json({})),
+  openComfy: () => request<{ requested: boolean }>('/api/workstation/comfy/open', json({})),
+  openFolder: (kind: FolderKind) =>
+    request<{ kind: FolderKind; requested: boolean }>(`/api/workstation/folders/${kind}/open`, json({})),
   promptCatalog: () => request<PromptCatalog>('/api/prompting/catalog'),
   buildPrompt: (template: PromptTemplateId, input: PromptForm) =>
     request<BuildPromptResponse>('/api/prompting/build', json({ template, input })),

@@ -57,10 +57,13 @@ export function modelFileName(target: string): string {
   return target.split('/').pop() ?? target
 }
 
-export function describeModel(model: Pick<ManagedModel, 'target'>): KnownModel & { category: ModelCategory; file: string } {
+export function describeModel(
+  model: Pick<ManagedModel, 'target'> & Partial<Pick<ManagedModel, 'label'>>,
+): KnownModel & { category: ModelCategory; file: string } {
   const known = KNOWN[model.target]
   return {
-    label: known?.label ?? modelFileName(model.target),
+    // The backend's own label wins when it sends one.
+    label: model.label || known?.label || modelFileName(model.target),
     purpose: known?.purpose ?? 'Archivo fijado en el manifiesto del paquete.',
     category: modelCategory(model.target),
     file: modelFileName(model.target),
@@ -121,4 +124,27 @@ export function formatGiB(bytes: number): string {
 /** Bytes still to fetch for the models that are missing. */
 export function missingBytes(models: ManagedModel[]): number {
   return models.filter((model) => !model.verified).reduce((sum, model) => sum + model.size, 0)
+}
+
+const GIB = 1024 ** 3
+
+/**
+ * Whether the disk can take the rest of this file plus the backend's 1 GiB
+ * margin. Null when the backend did not report free space.
+ */
+export function fitsOnDisk(model: ManagedModel, freeBytes: number | undefined): boolean | null {
+  if (freeBytes === undefined) return null
+  const remaining = Math.max(0, model.size - (model.partial_valid_size === false ? 0 : (model.partial_bytes ?? 0)))
+  return freeBytes >= remaining + GIB
+}
+
+/** A resumable partial left on disk, or a bad one that must be inspected. */
+export function partialInfo(model: ManagedModel): { bytes: number; valid: boolean } | null {
+  const bytes = model.partial_bytes ?? 0
+  if (model.verified || bytes <= 0) return null
+  return { bytes, valid: model.partial_valid_size !== false }
+}
+
+export function licenseName(path: string): string {
+  return path.split('/').pop() ?? path
 }

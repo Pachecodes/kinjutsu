@@ -8,6 +8,7 @@ import { RecipeChip } from './components/composer/ComposerChips'
 import { ModeSwitch } from './components/composer/ModeSwitch'
 import { Gallery } from './components/gallery/Gallery'
 import { ModelsButton } from './components/models/ModelsDialog'
+import { WorkstationButton } from './components/workstation/WorkstationDialog'
 import { RecipeList } from './components/rail/RecipeRail'
 import { ReferencesPanel } from './components/references/ReferencesPanel'
 import { SettingsPanel } from './components/settings/SettingsPanel'
@@ -31,7 +32,7 @@ function Wordmark() {
       <span aria-hidden className="flex size-7 items-center justify-center rounded-lg bg-accent text-[11px] font-black text-accent-ink">
         H3
       </span>
-      <span className="display-title text-[15px] text-fg">{BRAND.product}</span>
+      <span className="display-title truncate text-[15px] text-fg">{BRAND.product}</span>
       <span className="hidden text-[10px] font-bold uppercase tracking-caps text-faint sm:inline">{BRAND.tagline}</span>
     </div>
   )
@@ -174,6 +175,7 @@ export default function App() {
       <header className="safe-pt flex min-w-0 shrink-0 items-center gap-2 border-b border-white/[0.06] px-4 py-2 sm:gap-3">
         <Wordmark />
         <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1">
+          <WorkstationButton />
           <ModelsButton />
           <GuideButton />
           <HealthPill />

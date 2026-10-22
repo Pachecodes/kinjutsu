@@ -1,22 +1,28 @@
 import { AlertTriangle, Boxes, CheckCircle2, Download, HardDrive, Loader2, RefreshCw, ShieldCheck, X } from 'lucide-react'
 import { useId, useState } from 'react'
 
-import { useFeatures, useModelCatalog, useModelMutations, useModelStatus } from '../../hooks/features'
+import { useFeatures, useLicenseText, useModelCatalog, useModelMutations, useModelStatus } from '../../hooks/features'
+import { useCachedConfig } from '../../hooks/queries'
 import { ApiError } from '../../lib/api'
 import { cn } from '../../lib/cn'
+import { HELP } from '../../lib/help'
 import {
   CATEGORY_LABEL,
   STATE_LABEL,
   describeModel,
+  fitsOnDisk,
   formatGiB,
   isActiveDownload,
+  licenseName,
   missingBytes,
   modelState,
+  partialInfo,
   type ModelState,
 } from '../../lib/models'
 import type { ManagedModel, ModelDownload } from '../../lib/types'
 import { Button } from '../ui/button'
 import { Dialog, DialogPanel, DialogTrigger } from '../ui/dialog'
+import { InfoTip } from '../ui/info-tip'
 import { ProgressBar } from '../ui/progress'
 import { EmptyState, ErrorState } from '../ui/states'
 import { useToast } from '../ui/toast'
@@ -34,6 +40,42 @@ const STATE_TONE: Record<ModelState, string> = {
   error: 'border-danger/40 bg-danger-soft/40 text-danger',
 }
 
+function LicenseLine({ path, readable }: { path: string; readable: boolean }) {
+  const [open, setOpen] = useState(false)
+  const name = licenseName(path)
+  const text = useLicenseText(open ? name : null)
+  return (
+    <li className="space-y-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[10px]">{path}</span>
+        {readable ? (
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-label={`${open ? 'Ocultar' : 'Leer'} ${name}`}
+            onClick={() => setOpen(!open)}
+            className="rounded-md border border-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-fg hover:bg-white/[0.06]"
+          >
+            {open ? 'Ocultar' : 'Leer'}
+          </button>
+        ) : null}
+      </div>
+      {open ? (
+        text.isLoading ? (
+          <p className="text-[10px] text-faint">Cargando licencia…</p>
+        ) : text.isError ? (
+          <p role="alert" className="text-[10px] text-danger">No se pudo cargar esta licencia.</p>
+        ) : (
+          // Plain text only: React escapes it; never rendered as HTML or Markdown.
+          <pre aria-label={`Texto de ${name}`} className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-white/[0.06] bg-ink-950 p-2 text-[10px] leading-relaxed text-muted">
+            {text.data}
+          </pre>
+        )
+      ) : null}
+    </li>
+  )
+}
+
 function LicenseConsent({
   model,
   licenses,
@@ -41,10 +83,12 @@ function LicenseConsent({
   onConfirm,
   onCancel,
   busy,
+  readable,
 }: {
   model: ManagedModel
   licenses: string[]
   resume: boolean
+  readable: boolean
   onConfirm: () => void
   onCancel: () => void
   busy: boolean
@@ -70,12 +114,10 @@ function LicenseConsent({
         <li>No inicia ningún render. Al terminar hay que reiniciar Comfy (DETENER/INICIAR) cuando no haya renders.</li>
       </ul>
       <div className="text-[11px] text-muted">
-        <p className="font-semibold text-fg">Licencias (en la carpeta del paquete):</p>
-        <ul className="mt-1 space-y-0.5">
+        <p className="font-semibold text-fg">Licencias{readable ? '' : ' (en la carpeta del paquete)'}:</p>
+        <ul className="mt-1 space-y-1">
           {licenses.map((path) => (
-            <li key={path} className="font-mono text-[10px]">
-              {path}
-            </li>
+            <LicenseLine key={path} path={path} readable={readable} />
           ))}
         </ul>
       </div>
@@ -106,11 +148,21 @@ function ModelCard({
   model,
   job,
   licenses,
+  freeBytes,
+  readableLicenses,
 }: {
   model: ManagedModel
   job: ModelDownload | undefined
   licenses: string[]
+  freeBytes: number | undefined
+  readableLicenses: boolean
 }) {
+  const cachedConfig = useCachedConfig()
+  const recipes = (model.required_by ?? []).map(
+    (id) => cachedConfig()?.presets.find((preset) => preset.id === id)?.label ?? id,
+  )
+  const partial = partialInfo(model)
+  const fits = fitsOnDisk(model, freeBytes)
   const { install, cancel } = useModelMutations()
   const { toast } = useToast()
   const [consenting, setConsenting] = useState(false)
@@ -119,8 +171,10 @@ function ModelCard({
   const info = describeModel(model)
   const active = isActiveDownload(job)
   const state = modelState(model, job, cancelRequested && active)
-  const canInstall = state === 'missing' || state === 'cancelled' || state === 'error'
-  const resume = state === 'cancelled' || state === 'error' || (job !== undefined && job.bytes > 0 && !model.verified)
+  const badPartial = partial !== null && !partial.valid && !job
+  const canInstall = (state === 'missing' || state === 'cancelled' || state === 'error') && !badPartial && fits !== false
+  const resume =
+    state === 'cancelled' || state === 'error' || (job !== undefined && job.bytes > 0 && !model.verified) || (partial?.valid ?? false)
 
   const confirm = async () => {
     setError(null)
@@ -170,6 +224,39 @@ function ModelCard({
           {STATE_LABEL[state]}
         </span>
       </div>
+
+      {recipes.length > 0 ? (
+        <p className="mt-1.5 flex flex-wrap items-center gap-1 text-[10px] text-faint">
+          Lo usa:
+          {recipes.map((label) => (
+            <span key={label} className="rounded-md border border-white/10 px-1.5 py-0.5 text-muted">
+              {label}
+            </span>
+          ))}
+        </p>
+      ) : null}
+
+      {partial && !job ? (
+        partial.valid ? (
+          <p className="mt-2 text-[11px] text-muted">
+            Hay una descarga parcial guardada: {formatGiB(partial.bytes)} de {formatGiB(model.size)}. «Reanudar» continúa desde ahí y
+            verifica el SHA256 al final.
+          </p>
+        ) : (
+          <p role="alert" className="mt-2 flex items-start gap-1.5 text-[11px] text-danger">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            El parcial guardado es mayor que el tamaño fijado. No se reanuda: el administrador debe revisarlo en el equipo.
+          </p>
+        )
+      ) : null}
+
+      {fits === false && !model.verified && !active ? (
+        <p role="alert" className="mt-2 flex items-start gap-1.5 text-[11px] text-warn">
+          <HardDrive className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          No cabe en el disco: faltan {formatGiB(model.size - (partial?.valid ? partial.bytes : 0))} más 1 GB de margen y hay{' '}
+          {formatGiB(freeBytes ?? 0)} libres. Libera espacio en disco (no es VRAM).
+        </p>
+      ) : null}
 
       {state === 'reused' ? (
         <p className="mt-2 text-[11px] text-faint">Encontrado y verificado en una carpeta autorizada: se usa ahí, sin copiarlo.</p>
@@ -221,6 +308,7 @@ function ModelCard({
         <LicenseConsent
           model={model}
           licenses={licenses}
+          readable={readableLicenses}
           resume={resume}
           busy={install.isPending}
           onCancel={() => setConsenting(false)}
@@ -233,6 +321,7 @@ function ModelCard({
 
 /** The pinned catalog: what is verified, reused, missing or downloading. */
 export function ModelsPanel() {
+  const features = useFeatures()
   const [checking, setChecking] = useState(false)
   const catalog = useModelCatalog(checking)
   const status = useModelStatus(true)
@@ -293,12 +382,16 @@ export function ModelsPanel() {
               <span className="font-semibold">
                 {verified} de {models.length} verificados
               </span>
+              {catalog.data?.free_bytes !== undefined ? (
+                <span className="text-muted"> · {formatGiB(catalog.data.free_bytes)} libres en disco (no VRAM)</span>
+              ) : null}
               {missingBytes(models) > 0 ? (
                 <span className="text-muted"> · faltan {formatGiB(missingBytes(models))}</span>
               ) : (
                 <span className="text-accent"> · todo listo</span>
               )}
             </p>
+            {catalog.data?.free_bytes !== undefined ? <InfoTip help={HELP.diskVsVram} label="Disco y VRAM" /> : null}
             <Button
               variant="ghost"
               size="sm"
@@ -313,7 +406,14 @@ export function ModelsPanel() {
           </div>
           <ul className="space-y-2">
             {models.map((model) => (
-              <ModelCard key={model.id} model={model} job={jobs.get(model.id)} licenses={catalog.data?.license_documents ?? []} />
+              <ModelCard
+                key={model.id}
+                model={model}
+                job={jobs.get(model.id)}
+                licenses={catalog.data?.license_documents ?? []}
+                freeBytes={catalog.data?.free_bytes}
+                readableLicenses={features.licenses}
+              />
             ))}
           </ul>
           <p className="text-[11px] leading-snug text-faint">
@@ -333,7 +433,7 @@ export function ModelsButton() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="Modelos: comprobar e instalar">
+        <Button variant="ghost" size="sm" aria-label="Modelos: comprobar e instalar" data-tour="models-button">
           <Boxes aria-hidden />
           <span className="hidden sm:inline">Modelos</span>
         </Button>

@@ -96,8 +96,18 @@ export const TOUR_STEPS: TourStep[] = [
     mobileView: 'gallery',
   },
   {
+    id: 'workstation',
+    title: '8 · Studio, motor y modelos',
+    body: [
+      'Studio es esta app; el motor ComfyUI es el proceso que renderiza en la GPU; los modelos y LoRAs son archivos en disco que el motor carga en VRAM. Studio puede funcionar con el motor detenido, pero así no se genera.',
+      'Si tu instalación lo incluye, «Instalación» separa Iniciar motor de Abrir ComfyUI, abre carpetas en el equipo servidor y busca instalaciones: encontrar una no la aprueba. «Modelos» instala solo lo que falta, con licencia y espacio en disco a la vista. Esos controles solo funcionan en el propio equipo.',
+    ],
+    targets: ['workstation', 'models-button', 'advanced'],
+    mobileView: 'compose',
+  },
+  {
     id: 'advanced',
-    title: '8 · Avanzado cuando lo necesites',
+    title: '9 · Avanzado cuando lo necesites',
     body: [
       'Modelo base, codificador, LoRAs (en orden), método, sampler y continuidad viven en Avanzado, con una explicación en cada control.',
       'Si tu instalación lo incluye, el botón «Modelos» comprueba e instala pesos con tu consentimiento. Puedes repetir este recorrido desde «Guía».',

@@ -146,6 +146,20 @@ export const HELP = {
     what: 'Tramo del muestreo en el que se reutiliza la caché.',
     when: '0,2–0,9 es el tramo medido.',
   },
+  engine: {
+    what: 'El motor ComfyUI es el proceso que renderiza en la GPU. Studio (esta app) prepara y envía las tomas; sin motor en línea no se genera.',
+    when: 'Inícialo cuando vayas a generar. Abrir la página de ComfyUI no lo arranca.',
+    cost: 'Arrancar carga pesos en VRAM y tarda; un puerto ocupado por otro programa bloquea el arranque.',
+  },
+  installation: {
+    what: 'Detectada significa que existe en el equipo; aprobada significa que el administrador autorizó usarla y arrancarla.',
+    when: 'Elige una instalación aprobada. Para aprobar otra, edita la configuración local del equipo.',
+    cost: 'Elegirla no cambia con qué genera Studio ahora; eso se ajusta sin renders en curso.',
+  },
+  diskVsVram: {
+    what: 'El espacio en disco guarda los modelos; la VRAM de la GPU es donde se cargan al generar. Son cosas distintas.',
+    cost: 'Tener disco libre no garantiza VRAM suficiente, ni al revés.',
+  },
   solTau: {
     what: 'Umbral de la atención dispersa SolAttn (experimental).',
     cost: 'Medido más lento que Quality y con SSIM 0,778. Nunca por defecto.',
