@@ -1,0 +1,124 @@
+/**
+ * How the pinned model catalog reads for a creator. The backend sends only
+ * manifest targets; names and purposes here are presentation, keyed by the
+ * exact target. An unknown target still shows, by its file name.
+ */
+
+import type { DownloadStatus, ManagedModel, ModelDownload } from './types'
+
+export type ModelCategory = 'diffusion_models' | 'text_encoders' | 'vae' | 'loras' | 'other'
+
+export const CATEGORY_LABEL: Record<ModelCategory, string> = {
+  diffusion_models: 'Modelo base',
+  text_encoders: 'Codificador de prompt',
+  vae: 'VAE',
+  loras: 'LoRA',
+  other: 'Otro',
+}
+
+interface KnownModel {
+  label: string
+  purpose: string
+}
+
+const KNOWN: Record<string, KnownModel> = {
+  'diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors': {
+    label: 'H3 Ref2VA INT8',
+    purpose: 'El generador de vídeo para referencias y Character Swap.',
+  },
+  'text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors': {
+    label: 'Qwen3-VL Standard',
+    purpose: 'Convierte el prompt en condicionamiento. No genera vídeo.',
+  },
+  'vae/minimax_h3_video_vae_fp16.safetensors': {
+    label: 'VAE de vídeo',
+    purpose: 'Decodifica los latentes en fotogramas.',
+  },
+  'vae/minimax_h3_audio_vae_fp32.safetensors': {
+    label: 'VAE de audio',
+    purpose: 'Decodifica el sonido que escribe H3.',
+  },
+  'loras/latest_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors': {
+    label: 'Turbo8 Ref2VA',
+    purpose: 'LoRA de 8 pasos de la receta Character Swap aprobada.',
+  },
+  'loras/minimax_h3_character_swap_v1.1_ref2va_fro.safetensors': {
+    label: 'BFS Character Swap v1.1',
+    purpose: 'LoRA que cambia la identidad con la guía alineada.',
+  },
+}
+
+export function modelCategory(target: string): ModelCategory {
+  const head = target.split('/')[0]
+  return head === 'diffusion_models' || head === 'text_encoders' || head === 'vae' || head === 'loras' ? head : 'other'
+}
+
+export function modelFileName(target: string): string {
+  return target.split('/').pop() ?? target
+}
+
+export function describeModel(model: Pick<ManagedModel, 'target'>): KnownModel & { category: ModelCategory; file: string } {
+  const known = KNOWN[model.target]
+  return {
+    label: known?.label ?? modelFileName(model.target),
+    purpose: known?.purpose ?? 'Archivo fijado en el manifiesto del paquete.',
+    category: modelCategory(model.target),
+    file: modelFileName(model.target),
+  }
+}
+
+/** What the card should say, merging the (slow) catalog with the (live) job list. */
+export type ModelState =
+  | 'verified'
+  | 'reused'
+  | 'missing'
+  | 'queued'
+  | 'downloading'
+  | 'verifying'
+  | 'cancelling'
+  | 'cancelled'
+  | 'error'
+  | 'installed_now'
+
+const ACTIVE: DownloadStatus[] = ['queued', 'downloading', 'verifying']
+
+export function isActiveDownload(job: ModelDownload | undefined): boolean {
+  return Boolean(job && ACTIVE.includes(job.status))
+}
+
+export function modelState(model: ManagedModel, job: ModelDownload | undefined, cancelRequested: boolean): ModelState {
+  if (job) {
+    if (job.status === 'queued' || job.status === 'downloading' || job.status === 'verifying') {
+      return cancelRequested ? 'cancelling' : job.status
+    }
+    if (job.status === 'installed') return job.reused ? 'reused' : 'installed_now'
+    if (job.status === 'cancelled') return 'cancelled'
+    if (job.status === 'error') return 'error'
+  }
+  if (model.verified) return model.reused ? 'reused' : 'verified'
+  return 'missing'
+}
+
+export const STATE_LABEL: Record<ModelState, string> = {
+  verified: 'Instalado y verificado',
+  reused: 'Reutilizado (verificado)',
+  missing: 'Falta',
+  queued: 'En cola',
+  downloading: 'Descargando',
+  verifying: 'Verificando SHA256',
+  cancelling: 'Cancelación solicitada',
+  cancelled: 'Cancelado · parcial conservado',
+  error: 'Error',
+  installed_now: 'Instalado · reinicia Comfy',
+}
+
+export function formatGiB(bytes: number): string {
+  const gib = bytes / 1024 ** 3
+  if (gib >= 1) return `${gib.toFixed(gib >= 10 ? 1 : 2).replace('.', ',')} GB`
+  return `${Math.round(bytes / 1024 ** 2)} MB`
+}
+
+/** Bytes still to fetch for the models that are missing. */
+export function missingBytes(models: ManagedModel[]): number {
+  return models.filter((model) => !model.verified).reduce((sum, model) => sum + model.size, 0)
+}

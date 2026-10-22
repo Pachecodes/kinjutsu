@@ -1,0 +1,47 @@
+{
+  "mode": "ref2va",
+  "method": "baseline",
+  "weights": "int8",
+  "encoder": "standard",
+  "prompt": "body_swap: Replace the single adult person in the aligned guide with the adult person from <Picture 1>. Picture 1 owns the complete identity, facial proportions, hair and consistent natural skin complexion of the face, neck, exposed arms, both hands and fingers, allowing plausible local light and shadows. The guide owns the original clothing, accessories, props, environment, camera framing, pose, performance and exact movement timing, not the original person identity. Preserve the source outfit and setting. Follow the original expressions, mouth movements and hand trajectories without inventing actions. Keep one coherent face, anatomically plausible separate fingers and rigid props. Exactly one adult person. No added people, cuts, captions, watermark or collage. Soundscape: quiet natural ambience, no narration, no singing or music.",
+  "width": 736,
+  "height": 1280,
+  "length": 124,
+  "seed": 20261021,
+  "steps": 8,
+  "sampler_name": "euler",
+  "scheduler": "simple",
+  "custom_sigmas": null,
+  "ref_image_size": "match",
+  "continuity": {
+    "auto_split": false,
+    "window": "auto",
+    "pin_frames": "22"
+  },
+  "lora_chain": [
+    {
+      "name": "latest_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors",
+      "strength": 1.0
+    },
+    {
+      "name": "minimax_h3_character_swap_v1.1_ref2va_fro.safetensors",
+      "strength": 1.0
+    }
+  ],
+  "references": [
+    {
+      "asset_id": "REPLACE_WITH_UPLOADED_IDENTITY_ASSET_ID",
+      "kind": "image",
+      "role": "identity",
+      "include_audio": false
+    },
+    {
+      "asset_id": "REPLACE_WITH_UPLOADED_GUIDE_ASSET_ID",
+      "kind": "video",
+      "role": "aligned_guide",
+      "include_audio": false
+    }
+  ],
+  "title": "Pachecodes : Kinjutsu — Character Swap HD Turbo8",
+  "preset_id": "character-swap-v11"
+}

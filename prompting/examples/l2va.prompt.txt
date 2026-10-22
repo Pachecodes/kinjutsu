@@ -1,0 +1,7 @@
+How the reference pictures align with the target video — <Picture 1> (from [Shot 1]) aligns with the 6.25-second mark of the target video.
+
+integrated_multimodal_description: [Shot 1] Live-action with reference-consistent colors. A single adult fictional performer with short dark hair and medium intrinsic skin complexion. Continuously converge to the exact pose, object states and composition of <Picture 1> at 6.25 seconds. Scene: An empty rehearsal room with a plain wall and open floor. Performance: The performer raises one hand, opens the fingers and lowers the hand continuously. Camera: The camera holds a static medium shot. Lighting: Soft local window light from frame left with stable natural shadows. Sound: Quiet room tone and a small fabric rustle. <Picture 1> establishes the last_frame: The explicitly supplied rehearsal-room composition with the hand lowered at the ending. The target ends at 6.25 seconds.
+
+overall_soundscape: Quiet room tone and soft fabric movement continue throughout.
+
+non_diegetic_music: N/A

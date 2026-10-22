@@ -1,0 +1,37 @@
+{
+  "core_repository": "https://github.com/Comfy-Org/ComfyUI",
+  "core_revision": "7a131a3afadc8200120f67f9236311a2c48b7445",
+  "addguide_upstream_revision": "355cd6b14c92c19ac3188fe528e47a3f21ef5178",
+  "addguide_upstream_file": "comfy_extras/nodes_minimax_h3.py",
+  "addguide_upstream_source_sha256": "108ceff11e5a5c9a34a57bbc380447cf9941beb673a1bd421abc818de54ccd5c",
+  "source_label": "Audited H3 aligned-guide production recipe; no personal inputs or paths",
+  "files": [
+    {
+      "path": "runtime/patches/h3-aligned-guide.patch",
+      "size": 2444,
+      "sha256": "c9c05abaab59fa727841985c0a4048d9db1ca5702e360addc348fc6d6a46ecbc"
+    },
+    {
+      "path": "runtime/patches/ComfyUI-H3-AddGuide/LICENSE",
+      "size": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "runtime/patches/ComfyUI-H3-AddGuide/__init__.py",
+      "size": 5188,
+      "sha256": "65a6d997086934d530a117258260cf9a8b1eff6a1b7ef93ba292333b9b196647"
+    }
+  ],
+  "core_files": [
+    {
+      "path": "comfy/model_base.py",
+      "before_sha256": "28f8df94cc26e3dc925ef512ec1b067083acdd00a9f92dd47b46f63e377f05f4",
+      "after_sha256": "aa8536b164dcc39aa8bb75f584ccfac23c9b48277a970c3b28884f3a777e3a5b"
+    },
+    {
+      "path": "comfy/ldm/minimax/model.py",
+      "before_sha256": "7633acc2edc55266b7772433a666bd536cedc12d16b60b85b512d43fd61182a8",
+      "after_sha256": "42e4c4f3294d478b2a1ef58ce20ddff0a56501389f21829d7b7368be6939c2e9"
+    }
+  ]
+}

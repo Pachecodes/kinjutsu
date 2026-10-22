@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Cool graphite stack (PictureME family): canvas #101112, panels #181a1d. */
+    --ink-950: 210 6% 6.7%;
+    --ink-900: 216 8% 9.6%;
+    --ink-850: 216 8% 11.4%;
+    --ink-800: 220 7% 13.5%;
+    --ink-700: 220 6% 17.5%;
+    --ink-600: 220 5% 23%;
+
+    --line: 220 6% 17%;
+    --line-strong: 220 6% 26%;
+
+    --fg: 0 0% 98%;
+    --muted: 240 5% 76%;
+    /* Kept above 4.5:1 on the canvas: hints are still read, not decoration. */
+    --faint: 240 4% 60%;
+
+    /* The single accent hue. Lime is a verb: it marks what acts, what is active, and focus. */
+    --accent: 82 84% 67%;
+    --accent-soft: 82 34% 18%;
+    --accent-ink: 80 40% 6%;
+    /* The one generation action: same hue, one notch louder. */
+    --cta: 69 100% 49%;
+    --cta-hover: 68 100% 62%;
+    --cta-base: 69 100% 28%;
+
+    --danger: 4 78% 64%;
+    --danger-soft: 4 40% 16%;
+    --warn: 40 92% 62%;
+    --warn-soft: 40 46% 14%;
+
+    --font-sans: 'Inter', 'Segoe UI Variable Text', 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, system-ui,
+      sans-serif;
+    --font-display: 'Inter Display', 'Inter', 'Segoe UI Variable Display', 'Segoe UI', -apple-system,
+      'Helvetica Neue', Arial, system-ui, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', Menlo, Consolas, monospace;
+
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
+
+  * {
+    border-color: hsl(var(--line));
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink-950 text-fg font-sans antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
+    /* The workspace scrolls inside its panels; the page itself never does. */
+    overflow: hidden;
+  }
+
+  /* Focus is always the accent, never a browser default blue. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent/70 ring-offset-2 ring-offset-ink-950;
+  }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.28);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--ink-600));
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--line-strong));
+    background-clip: content-box;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@layer components {
+  /* One surface, hairline border, one shadow depth. No glass stacking. */
+  .panel {
+    @apply rounded-2xl border border-white/[0.06] bg-ink-900;
+  }
+
+  /* The composer shell: the one place that is allowed to feel like an object. */
+  .shell {
+    @apply rounded-[1.5rem] border border-white/[0.06] bg-ink-900 shadow-panel md:rounded-[1.75rem];
+  }
+
+  /* Compact, structural labels: uppercase, heavy, wide tracking. */
+  .eyebrow {
+    @apply text-[10px] font-bold uppercase tracking-caps text-faint;
+  }
+
+  .display-title {
+    @apply font-display font-semibold tracking-editorial;
+  }
+
+  /* A chip that opens a menu or toggles a value in the composer row. */
+  .chip {
+    @apply inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2
+      text-[11px] font-semibold text-muted transition-colors hover:bg-white/[0.08] hover:text-fg
+      disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:border-accent/40 data-[state=open]:text-fg;
+  }
+
+  /* Fine graphite grain so large empty areas read as a stage, not a void. */
+  .stage-surface {
+    background-color: hsl(var(--ink-900));
+    background-image: radial-gradient(hsl(var(--ink-700) / 0.55) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  .safe-px {
+    padding-left: max(1rem, var(--safe-left));
+    padding-right: max(1rem, var(--safe-right));
+  }
+
+  .safe-pb {
+    padding-bottom: var(--safe-bottom);
+  }
+
+  .safe-pt {
+    padding-top: var(--safe-top);
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

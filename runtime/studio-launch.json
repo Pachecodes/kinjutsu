@@ -1,0 +1,16 @@
+{
+  "asgi_app": "app.main:app",
+  "working_directory": "studio/backend",
+  "frontend_dist": "studio/frontend/dist",
+  "host": "127.0.0.1",
+  "port": 8220,
+  "health_path": "/api/health",
+  "openapi_path": "/api/openapi.json",
+  "environment": {
+    "H3_COMFY_URL": "http://127.0.0.1:8218",
+    "H3_EXPERIMENTAL_COMFY_URL": "http://127.0.0.1:8218",
+    "H3_DIRECTOR_ENABLED": "false",
+    "H3_DIRECTOR_AUTOSTART_OLLAMA": "false",
+    "H3_DIRECTOR_OPENAI_MANAGED_GPU": "false"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Pachecodes : Kinjutsu",
+  "scope": "CPU-only installer validation; NOT a clean-machine installation or GPU generation certification",
+  "unit_tests": {"command": "python -B -m pytest -p no:cacheprovider tests", "passed": 33, "skipped": 1, "result": "OK"},
+  "backend_tests": {"passed":392,"skipped":20},
+  "frontend_tests": {"passed":89,"files":16,"typecheck_build":"passed"},
+  "privacy_gate": {"result":"passed","inventory_final":false,"reason":"parent integration pending"},
+  "cpu_http": {"health":"degraded with Comfy offline","upload":"synthetic 64x64 3 seconds","prepared_frames":[22,39],"provenance":"original source ID retained","ffmpeg_pair":"pinned portable 8.0 exercised","owned_processes_stopped":true},
+  "package_verification": {"command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Verify-Kinjutsu.ps1 -PackageOnly", "models": 6, "included": 2, "base_bytes": 42470585471, "patches": "verified"},
+  "dependency_resolution": {"target_python":"3.12.10","cpu_scratch_python":"3.12.10","platform":"Windows x64","locked_packages":93,"dry_run_result":"Resolved 93 packages with hashes, only-binary and no-deps; no GPU packages installed","numpy":"2.4.6"},
+  "patch_check": "Clean pinned two-file git snapshot passed forward applicability, exact postimage SHA256, and reverse applicability; audited production remained untouched",
+  "powershell_syntax": "All owned .ps1 files parsed successfully",
+  "alternate_root": "InstallRoot containing spaces passed offline dry-run without creating a runtime directory",
+  "production_cpu_import_smoke": {"torch": "2.13.0+cu130", "torchvision": "0.28.0+cu130", "torchaudio": "2.11.0+cu130", "resample_input_shape": [1,240], "resample_rates": [24000,16000], "resample_output_shape": [1,160]},
+  "known_divergence": "Production torchaudio metadata requires torch 2.11; actual torch is 2.13. No torchaudio 2.13 CUDA130 wheel existed on the audited index. Explicit override preserved and documented.",
+  "not_executed": ["full portable environment install", "large base-model downloads", "production service startup", "GPU render"],
+  "studio_integration_contract": "app.main:app from studio/backend; sanitized rebuilt dist served on 8220. Model manager API implemented; visual UI integration and parent prompting route pending."
+}

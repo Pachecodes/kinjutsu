@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "requires_agent": false,
+  "requires_api_token": false,
+  "templates": [
+    {
+      "id": "character-swap-aligned",
+      "mode": "Ref2VA + aligned guide",
+      "trigger": "body_swap:",
+      "section_style": "specialized body_swap",
+      "asset_roles": [
+        "identity",
+        "aligned_guide"
+      ],
+      "additional_image_roles": [],
+      "compatibility": {
+        "preset_ids": [
+          "character-swap-hd-turbo8"
+        ],
+        "aligned_guide": true,
+        "ordinary_video_token": null,
+        "changes_recipe": false,
+        "changes_weights_or_loras": false,
+        "submits_render": false
+      },
+      "status": "Approved aligned ownership/prefix template; no new GPU test"
+    },
+    {
+      "id": "motion-ref2va",
+      "mode": "Ref2VA",
+      "trigger": null,
+      "section_style": "six-section full-reference",
+      "asset_roles": [
+        "identity",
+        "motion"
+      ],
+      "additional_image_roles": [
+        "scene",
+        "costume",
+        "style"
+      ],
+      "compatibility": {
+        "preset_ids": [
+          "character-swap-playground"
+        ],
+        "aligned_guide": false,
+        "ordinary_video_token": "<Video 1>",
+        "changes_recipe": false,
+        "changes_weights_or_loras": false,
+        "submits_render": false
+      },
+      "status": "Ordinary Motion reference, NOT approved aligned recipe; may be slow with Qwen"
+    },
+    {
+      "id": "t2va",
+      "mode": "T2VA",
+      "trigger": null,
+      "section_style": "three-section base",
+      "asset_roles": [],
+      "additional_image_roles": [],
+      "compatibility": {
+        "preset_ids": [],
+        "aligned_guide": false,
+        "ordinary_video_token": null,
+        "changes_recipe": false,
+        "changes_weights_or_loras": false,
+        "submits_render": false
+      },
+      "status": "Prompt structure only; backend must validate model/mode support"
+    },
+    {
+      "id": "i2va",
+      "mode": "I2VA",
+      "trigger": null,
+      "section_style": "three-section base",
+      "asset_roles": [
+        "first_frame"
+      ],
+      "additional_image_roles": [],
+      "compatibility": {
+        "preset_ids": [],
+        "aligned_guide": false,
+        "ordinary_video_token": null,
+        "changes_recipe": false,
+        "changes_weights_or_loras": false,
+        "submits_render": false
+      },
+      "status": "Prompt structure only; backend must validate model/mode support"
+    },
+    {
+      "id": "fl2va",
+      "mode": "FL2VA",
+      "trigger": null,
+      "section_style": "three-section base",
+      "asset_roles": [
+        "first_frame",
+        "last_frame"
+      ],
+      "additional_image_roles": [],
+      "compatibility": {
+        "preset_ids": [],
+        "aligned_guide": false,
+        "ordinary_video_token": null,
+        "changes_recipe": false,
+        "changes_weights_or_loras": false,
+        "submits_render": false
+      },
+      "status": "Prompt structure only; backend must validate model/mode support"
+    },
+    {
+      "id": "l2va",
+      "mode": "L2VA",
+      "trigger": null,
+      "section_style": "three-section base",
+      "asset_roles": [
+        "last_frame"
+      ],
+      "additional_image_roles": [],
+      "compatibility": {
+        "preset_ids": [],
+        "aligned_guide": false,
+        "ordinary_video_token": null,
+        "changes_recipe": false,
+        "changes_weights_or_loras": false,
+        "submits_render": false
+      },
+      "status": "Prompt structure only; backend must validate model/mode support"
+    }
+  ],
+  "limits": {
+    "duration_seconds": "0 < duration <= 3600, at most 3 decimal places; text-only limit, NOT an H3 runtime guarantee",
+    "shots": "start=0, later strictly increasing; millisecond precision; all cuts < duration",
+    "dialogue": "chronological, no overlaps; each line wholly inside one shot; original language/text preserved"
+  },
+  "language": "English visual/audio descriptions are user supplied, never automatically translated. Spoken language is user supplied."
+}

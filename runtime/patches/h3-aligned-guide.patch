@@ -1,0 +1,46 @@
+diff --git a/comfy/ldm/minimax/model.py b/comfy/ldm/minimax/model.py
+index f745db88..349f210f 100644
+--- a/comfy/ldm/minimax/model.py
++++ b/comfy/ldm/minimax/model.py
+@@ -312,14 +312,21 @@ class PackedLayout:
+                     cond_t = float(text_len) + sum(_video_t_spans(latent_t)) - FRAME_RESCALE
+                 else:
+                     raise ValueError("only first/last keyframe anchors are supported")
+-                g = torch.empty(frame_rows, 3, dtype=torch.float64)
+-                g[:, 0] = cond_t
+-                g[:, 1:] = frame
+-                segments.append(("cond", frame_rows))
++                # Pinned upstream AddGuide clip packing backport (355cd6b14c92).
++                # Preserve incumbent single first/last-frame timing verbatim.
++                vt = kf["latent"].shape[2]
++                n = vt * frame_rows
++                if vt > 1:
++                    g = _video_grid(vt, frame, float(text_len) + FRAME_RESCALE * pixel_index)
++                else:
++                    g = torch.empty(frame_rows, 3, dtype=torch.float64)
++                    g[:, 0] = cond_t
++                    g[:, 1:] = frame
++                segments.append(("cond", n))
+                 pos.append(g)
+-                img_pos.append(torch.arange(row, row + frame_rows))
+-                img_update.append(torch.zeros(frame_rows, dtype=torch.bool))
+-                row += frame_rows
++                img_pos.append(torch.arange(row, row + n))
++                img_update.append(torch.zeros(n, dtype=torch.bool))
++                row += n
+ 
+         target_audio_w = (float(w_grid[0]), float(w_grid[-1]))
+         if refs:
+diff --git a/comfy/model_base.py b/comfy/model_base.py
+index 90cab7ac..2074e165 100644
+--- a/comfy/model_base.py
++++ b/comfy/model_base.py
+@@ -2170,7 +2170,7 @@ class MiniMaxH3(BaseModel):
+         refs = kwargs.get("minimax_refs", None)
+         if refs is not None:
+             payload["refs"] = refs
+-            payload["cond_video_latents"] = [r["latent"] for r in refs if "latent" in r]
++            payload["cond_video_latents"] = payload.get("cond_video_latents", []) + [r["latent"] for r in refs if "latent" in r]
+             payload["cond_audio_latents"] = [r["audio_latent"] for r in refs if r.get("audio_latent") is not None]
+         if kwargs.get("minimax_visual_cond_noise_aug", None) is not None:
+             payload["visual_cond_noise_aug"] = kwargs["minimax_visual_cond_noise_aug"]

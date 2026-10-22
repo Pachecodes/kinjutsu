@@ -1,0 +1,37 @@
+# Local runtimes and user data are not part of source control.
+.env
+.env.*
+!.env.example
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.venv/
+**/node_modules/
+studio/data/
+runtime/venv/
+runtime/tools/
+runtime/cache/
+runtime/logs/
+runtime/state/
+runtime/ComfyUI/
+runtime/extra_model_paths.yaml
+runtime/tool-paths.json
+runtime/install-state.json
+models/diffusion_models/*.safetensors
+models/text_encoders/*.safetensors
+models/vae/*.safetensors
+input/
+output/
+# Bundled LoRAs intentionally remain in the distributed folder.
+# If publishing source elsewhere, use Git LFS for them and retain upstream terms.
+
+# Git distribution never contains model weights or host-local configuration.
+*.safetensors
+*.pt
+*.pth
+models/**/*.bin
+runtime/installed.json
+runtime/model-roots.json
+runtime/workstation.json
+runtime/workstation-state.json
+runtime/download-receipts/

@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minimax-h3-studio-backend"
+version = "1.0.0"
+description = "FastAPI backend for MiniMax H3 Studio"
+requires-python = ">=3.12"
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+filterwarnings = ["error::DeprecationWarning:app.*"]

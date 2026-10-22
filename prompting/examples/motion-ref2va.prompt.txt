@@ -1,0 +1,20 @@
+subject_definitions:
+<Subject 1> is A single adult fictional performer with short dark hair and medium intrinsic skin complexion, using <Picture 1> for identity: A fictional adult identity portrait with short dark hair and medium intrinsic skin complexion.
+<Video 1> provides whole-video motion, camera and temporal guidance: A continuous static-camera hand-gesture performance in the rehearsal room. Its audio is not enabled or reused.
+
+summary:
+[reference generation] Generate a 6.25-second target featuring <Subject 1>, guided by <Video 1> and the image-derived subjects defined above. Do not edit or continue the source file or copy its soundtrack.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1]): fully_preserved - retain the explicitly described identity.
+<Video 1> (motion, camera and temporal structure): weak_reference - guide the explicitly described target actions without copying identity or audio; this is ordinary reference generation, not an aligned guide.
+
+detailed_description:
+The target video uses this user-specified style: Live-action with reference-consistent colors.
+[Shot 1] Keep <Subject 1>, A single adult fictional performer with short dark hair and medium intrinsic skin complexion, visible; use <Video 1> for the explicitly described motion, camera and timing, not its identity. Scene: An empty rehearsal room with a plain wall and open floor. Performance: The performer raises one hand, opens the fingers and lowers the hand continuously. Camera: The camera holds a static medium shot. Lighting: Soft local window light from frame left with stable natural shadows. Sound: Quiet room tone and a small fabric rustle.
+
+overall_soundscape:
+Quiet room tone and soft fabric movement continue throughout.
+
+non_diegetic_music:
+N/A

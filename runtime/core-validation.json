@@ -1,0 +1,18 @@
+{
+  "core_revision": "7a131a3afadc8200120f67f9236311a2c48b7445",
+  "clean_pinned_snapshot_apply": true,
+  "reverse_check": true,
+  "core_files": [
+    {
+      "path": "comfy/model_base.py",
+      "postimage_verified": true,
+      "sha256": "aa8536b164dcc39aa8bb75f584ccfac23c9b48277a970c3b28884f3a777e3a5b"
+    },
+    {
+      "path": "comfy/ldm/minimax/model.py",
+      "postimage_verified": true,
+      "sha256": "42e4c4f3294d478b2a1ef58ce20ddff0a56501389f21829d7b7368be6939c2e9"
+    }
+  ],
+  "gpu_started": false
+}

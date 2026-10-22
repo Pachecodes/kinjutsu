@@ -1,0 +1,29 @@
+{
+  "duration_seconds": 6.25,
+  "identity": "A single adult fictional performer with short dark hair and medium intrinsic skin complexion",
+  "style": "Live-action with reference-consistent colors",
+  "assets": [
+    {
+      "kind": "image",
+      "role": "last_frame",
+      "token": "<Picture 1>",
+      "description": "The explicitly supplied rehearsal-room composition with the hand lowered at the ending"
+    }
+  ],
+  "shots": [
+    {
+      "start_seconds": 0,
+      "scene": "An empty rehearsal room with a plain wall and open floor",
+      "performance": "The performer raises one hand, opens the fingers and lowers the hand continuously",
+      "camera": "The camera holds a static medium shot",
+      "lighting": "Soft local window light from frame left with stable natural shadows",
+      "sound": "Quiet room tone and a small fabric rustle"
+    }
+  ],
+  "audio": {
+    "soundscape": "Quiet room tone and soft fabric movement continue throughout.",
+    "music": "N/A",
+    "silent": false
+  },
+  "dialogue": []
+}
