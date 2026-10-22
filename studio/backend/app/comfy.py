@@ -40,6 +40,7 @@ class ComfyClientProtocol(Protocol):
     base_url: str
 
     async def object_info(self) -> dict[str, Any]: ...
+    async def system_stats(self) -> dict[str, Any]: ...
     async def queue(self) -> QueueSnapshot: ...
     async def submit(self, prompt: dict[str, Any], client_id: str) -> str: ...
     async def history(self, prompt_id: str) -> dict[str, Any] | None: ...
@@ -96,6 +97,12 @@ class ComfyClient:
         response = await self._get("/object_info")
         if response.status_code != 200:
             raise ComfyError(f"/object_info returned HTTP {response.status_code}")
+        return response.json()
+
+    async def system_stats(self) -> dict[str, Any]:
+        response = await self._get("/system_stats")
+        if response.status_code != 200:
+            raise ComfyError(f"/system_stats returned HTTP {response.status_code}")
         return response.json()
 
     async def queue(self) -> QueueSnapshot:

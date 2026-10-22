@@ -1,0 +1,163 @@
+{
+  "base_lock_normalized_lf_sha256": "5c326cd0bbd1e69fb20b3a22f361f1eacc727c7ae6891f325656ab2f985b4aa4",
+  "core_revision": "b1a247c9cf9dbfda4b2c0a0c1d50950667eeaa0c",
+  "evidence": "Read-only H3-FastH3-Omni-Lab/receipts/pip-freeze.txt and ComfyUI/requirements.txt; no lab-only optional plugins copied",
+  "updates": [
+    {
+      "name": "comfy-kitchen",
+      "version": "0.2.39",
+      "metadata_url": "https://pypi.org/pypi/comfy-kitchen/0.2.39/json",
+      "requires_dist": [
+        "nvidia-cublas>=13.0.0; extra == \"cublas\"",
+        "pytest>=7.0.0; extra == \"dev\"",
+        "pytest-benchmark>=4.0.0; extra == \"dev\"",
+        "ruff>=0.1.0; extra == \"dev\"",
+        "nanobind>=2.0.0; extra == \"build\""
+      ],
+      "wheels": [
+        {
+          "filename": "comfy_kitchen-0.2.39-cp312-abi3-win_amd64.whl",
+          "url": "https://files.pythonhosted.org/packages/80/15/3907945e97063945b0dc58c4fc203dd1a3d050ce24acf6d6c1e8d50ed972/comfy_kitchen-0.2.39-cp312-abi3-win_amd64.whl",
+          "sha256": "fa2da09c8ae68748baed7d38e1d4915c55f3fb098039192c004920d773de6dfc"
+        },
+        {
+          "filename": "comfy_kitchen-0.2.39-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/2d/59/ea43aae26ab4e3cb94731359dad8037d6277425b956f273902e1e186f876/comfy_kitchen-0.2.39-py3-none-any.whl",
+          "sha256": "6e5fe77dd5208b6aba0fa9ef93700ca7450f861bbef496c7101db751cf6eb78c"
+        }
+      ]
+    },
+    {
+      "name": "comfy-aimdo",
+      "version": "0.5.6",
+      "metadata_url": "https://pypi.org/pypi/comfy-aimdo/0.5.6/json",
+      "requires_dist": null,
+      "wheels": [
+        {
+          "filename": "comfy_aimdo-0.5.6-cp39-abi3-win_amd64.whl",
+          "url": "https://files.pythonhosted.org/packages/c8/d3/dcdcbc268559613975409d280234e35f3b49e26e1161e66d095201ec4bc7/comfy_aimdo-0.5.6-cp39-abi3-win_amd64.whl",
+          "sha256": "a323be8befb312398565627a7dc59ec9c8ac7ed1f2e106c9317dfa0f6e718a03"
+        },
+        {
+          "filename": "comfy_aimdo-0.5.6-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/9a/56/4b81638c327e437ba12be826e5a9012960ec51f74a405003142c29960c6c/comfy_aimdo-0.5.6-py3-none-any.whl",
+          "sha256": "9b327269e7b20712a496da7ab72923f4b784a7824c4dc2509760f3227c214e47"
+        }
+      ]
+    },
+    {
+      "name": "comfyui-frontend-package",
+      "version": "1.55.18",
+      "metadata_url": "https://pypi.org/pypi/comfyui-frontend-package/1.55.18/json",
+      "requires_dist": null,
+      "wheels": [
+        {
+          "filename": "comfyui_frontend_package-1.55.18-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/d5/5b/309ba9d70dc2984e7fa821151fd8c9f66a6067fb9e0257423120539818ed/comfyui_frontend_package-1.55.18-py3-none-any.whl",
+          "sha256": "34c388cdf5236b8bae57fd4d8bde54991e65f13f8247213325a6d7852b252053"
+        }
+      ]
+    },
+    {
+      "name": "comfyui-workflow-templates",
+      "version": "0.11.89",
+      "metadata_url": "https://pypi.org/pypi/comfyui-workflow-templates/0.11.89/json",
+      "requires_dist": [
+        "comfyui-workflow-templates-core==0.3.380",
+        "comfyui-workflow-templates-json==0.1.115",
+        "comfyui-workflow-templates-media-api==0.3.84",
+        "comfyui-workflow-templates-media-video==0.3.101",
+        "comfyui-workflow-templates-media-image==0.3.160",
+        "comfyui-workflow-templates-media-other==0.3.229",
+        "comfyui-workflow-templates-media-assets-01==0.1.48",
+        "comfyui-workflow-templates-media-assets-02==0.1.17",
+        "comfyui-workflow-templates-json==0.1.115; extra == \"json\"",
+        "comfyui-workflow-templates-media-assets-01==0.1.48; extra == \"assets\"",
+        "comfyui-workflow-templates-media-assets-02==0.1.17; extra == \"assets\"",
+        "comfyui-workflow-templates-media-api==0.3.84; extra == \"api\"",
+        "comfyui-workflow-templates-media-video==0.3.101; extra == \"video\"",
+        "comfyui-workflow-templates-media-image==0.3.160; extra == \"image\"",
+        "comfyui-workflow-templates-media-other==0.3.229; extra == \"other\"",
+        "comfyui-workflow-templates-json==0.1.115; extra == \"all\"",
+        "comfyui-workflow-templates-media-assets-01==0.1.48; extra == \"all\"",
+        "comfyui-workflow-templates-media-assets-02==0.1.17; extra == \"all\"",
+        "comfyui-workflow-templates-media-api==0.3.84; extra == \"all\"",
+        "comfyui-workflow-templates-media-video==0.3.101; extra == \"all\"",
+        "comfyui-workflow-templates-media-image==0.3.160; extra == \"all\"",
+        "comfyui-workflow-templates-media-other==0.3.229; extra == \"all\""
+      ],
+      "wheels": [
+        {
+          "filename": "comfyui_workflow_templates-0.11.89-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/dc/4f/4b9b97d3d8a13c32ee868a12419a24677f8e9c5c547bc569b187678f733f/comfyui_workflow_templates-0.11.89-py3-none-any.whl",
+          "sha256": "d58d2abd658aa2a599736ab0d366f2d9bb932ec8c7766b680689093b4a79b2e2"
+        }
+      ]
+    },
+    {
+      "name": "comfyui-embedded-docs",
+      "version": "0.5.14",
+      "metadata_url": "https://pypi.org/pypi/comfyui-embedded-docs/0.5.14/json",
+      "requires_dist": null,
+      "wheels": [
+        {
+          "filename": "comfyui_embedded_docs-0.5.14-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/21/99/87493c6a2c90801e949a5fc8e2f35acb45a05f79ba779dabd18c5d07dad0/comfyui_embedded_docs-0.5.14-py3-none-any.whl",
+          "sha256": "eae6c27521b6243250add8fa39f3263df3b5121739a2fe66ff278f2517f499e9"
+        }
+      ]
+    },
+    {
+      "name": "comfyui-workflow-templates-core",
+      "version": "0.3.380",
+      "metadata_url": "https://pypi.org/pypi/comfyui-workflow-templates-core/0.3.380/json",
+      "requires_dist": null,
+      "wheels": [
+        {
+          "filename": "comfyui_workflow_templates_core-0.3.380-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/31/2c/47991449189f055e128c88a0cd1a2a75069caad5fdb4208d2cb2dd2d33b7/comfyui_workflow_templates_core-0.3.380-py3-none-any.whl",
+          "sha256": "3e9a502980ea5a3b867c815e8b8d9c15dc899adc0cc4bf538322327aad95cecc"
+        }
+      ]
+    },
+    {
+      "name": "comfyui-workflow-templates-json",
+      "version": "0.1.115",
+      "metadata_url": "https://pypi.org/pypi/comfyui-workflow-templates-json/0.1.115/json",
+      "requires_dist": null,
+      "wheels": [
+        {
+          "filename": "comfyui_workflow_templates_json-0.1.115-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/1b/78/b496053c60c9f3b9bfca29e1a5d2bcfdf9c6e3905ad2f4c0ba042f0b07ac/comfyui_workflow_templates_json-0.1.115-py3-none-any.whl",
+          "sha256": "4e6e607a1a060b32d3a28da5185808796470633609e27dbecc64122391ac23c5"
+        }
+      ]
+    },
+    {
+      "name": "comfyui-workflow-templates-media-assets-01",
+      "version": "0.1.48",
+      "metadata_url": "https://pypi.org/pypi/comfyui-workflow-templates-media-assets-01/0.1.48/json",
+      "requires_dist": null,
+      "wheels": [
+        {
+          "filename": "comfyui_workflow_templates_media_assets_01-0.1.48-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/7c/4c/39858b7dd6036fae44e15baf6eb5e55671291d25b9e0931bc0956ce12055/comfyui_workflow_templates_media_assets_01-0.1.48-py3-none-any.whl",
+          "sha256": "7733ed12867e95e6b8b39be20bcc73579c28e97e5a44086ffb977cc2c1c78c43"
+        }
+      ]
+    },
+    {
+      "name": "comfyui-workflow-templates-media-assets-02",
+      "version": "0.1.17",
+      "metadata_url": "https://pypi.org/pypi/comfyui-workflow-templates-media-assets-02/0.1.17/json",
+      "requires_dist": null,
+      "wheels": [
+        {
+          "filename": "comfyui_workflow_templates_media_assets_02-0.1.17-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/ae/c4/d55eb32e7a2503aa0694bcbeb270bc1af907b6edc7b2fc8ecb5cf95de292/comfyui_workflow_templates_media_assets_02-0.1.17-py3-none-any.whl",
+          "sha256": "5051468c92a463016d56a90ecc03e67e52299facb46e7246908c45018cdd5fed"
+        }
+      ]
+    }
+  ]
+}

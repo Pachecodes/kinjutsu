@@ -77,6 +77,10 @@ def _presets_with_availability(capabilities: CapabilityResponse) -> list[dict[st
             elif not next((m.available for m in capabilities.modes if m.id.value == "ref2va"), False):
                 reason = "Native Ref2VA mode is unavailable."
         mode_id = preset.get('suggests_mode')
+        if preset["id"] == "fasth3-omni-scenes":
+            # Exact Omni foundation/weights/encoder are probed on its own backend.
+            result.append({**preset, "available": reason is None, "unavailable_reason": reason})
+            continue
         if reason is None and mode_id and not next((m.available for m in capabilities.modes if m.id.value == mode_id), False):
             reason = 'El modo requiere pesos/nodos que no estan instalados.'
         weight = preset.get('patch', {}).get('weights', 'int8')

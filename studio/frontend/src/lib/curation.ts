@@ -15,6 +15,7 @@ export type PresetTier = 'recommended' | 'standard' | 'experimental'
  */
 const RECOMMENDED = [
   'character-swap-hd-turbo8',
+  'fasth3-omni-scenes',
   'fast-preview-5s',
   'fast-final-trt-5s',
   'lightx2v8-creator-5s',
@@ -198,6 +199,7 @@ export function methodModeBlock(id: MethodId, mode: Mode): string | null {
   if (FRAME_ONLY.includes(id) && (mode === 'ref2va' || mode === 'performance')) {
     return 'Solo para Texto, Animar una imagen e Inicio + final.'
   }
+  if (id === 'fast_h3_omni_8step' && mode !== 'ref2va') return 'Escenas Omni usa Referencias (Ref2VA), no Performance ni fotogramas.'
   if (id === 'ref2va_vsa' && mode !== 'ref2va') return 'Solo en la tarea Referencias.'
   return null
 }

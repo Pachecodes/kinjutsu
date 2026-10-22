@@ -62,6 +62,7 @@ def test_config_exposes_presets_defaults_and_measured_basis(client: TestClient) 
     body = client.get("/api/config").json()
     preset_ids = [preset["id"] for preset in body["presets"]]
     assert preset_ids == [
+        "fasth3-omni-scenes",
         "character-swap-playground",
         "character-swap-hd-turbo8",
         "character-swap-v11",
@@ -101,7 +102,7 @@ def test_every_preset_patch_is_a_valid_partial_request(client: TestClient) -> No
     for preset in client.get("/api/presets").json()["presets"]:
         request = GenerationRequest.model_validate({"mode": preset["suggests_mode"] or "text", "prompt": "x", **preset["patch"]})
         assert request.length > 0
-        if preset["id"].startswith("10eros-") or preset["patch"]["method"] in {"fast_h3_v2_8step", "taomate_3step"}:
+        if preset["id"].startswith("10eros-") or preset["patch"]["method"] in {"fast_h3_v2_8step", "taomate_3step", "fast_h3_omni_8step"}:
             assert preset["estimate_seconds"] is None
         else:
             assert preset["estimate_seconds"] > 0

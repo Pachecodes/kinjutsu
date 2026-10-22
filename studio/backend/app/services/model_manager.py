@@ -29,6 +29,7 @@ class ModelManager:
         self.cancel_events = {}
         seen = set()
         for e in self.entries:
+            if type(e.get('optional',False)) is not bool: raise ValueError('optional must be boolean')
             p = PurePosixPath(e['target'])
             if (p.is_absolute() or '..' in p.parts or ':' in e['target'] or '\\' in e['target']
                     or len(p.parts) != 2 or p.parts[0] not in ('loras','vae','diffusion_models','text_encoders')
@@ -89,7 +90,11 @@ class ModelManager:
             safe_partial=part.resolve().is_relative_to((self.root/'models').resolve()) and part.is_file()
             partial_bytes=part.stat().st_size if safe_partial else 0
             required_by=(['character-swap-hd-turbo8'] if role=='turbo_lora' else ['character-swap-hd-turbo8','character-swap-v11']) if basename in labels else []
+            if e.get('profile')=='fasth3-omni': label,role='FastH3 Omni 8-step INT8 ConvRot','video_model'
+            if e.get('profile')=='fasth3-omni': required_by=['fasth3-omni-scenes']
+            elif role in ('text_encoder','video_vae','audio_vae'): required_by += ['fasth3-omni-scenes']
             rows.append(dict(id=str(i),target=e['target'],size=e['size'],sha256=e['sha256'],
+                optional=e.get('optional',False),profile=e.get('profile'),
                 included=e['included'],installed=found is not None,verified=found is not None,
                 reused=found is not None and not found.is_relative_to(self.root/'models'),
                 revision=e['revision'],repo=e['repo'],label=label,role=role,required_by=required_by,
@@ -98,17 +103,25 @@ class ModelManager:
             free_bytes=shutil.disk_usage(self.root/'models').free,
             license_documents=['licenses/MINIMAX-H3-LICENSE.txt','licenses/BFS-CHARACTER-SWAP-LICENSE.md','licenses/BFS-ASSET-SCOPE.md'])
 
-    def write_mapping(self):
+    def write_mapping(self, profile=None):
+        if profile not in (None,'fasth3-omni'): raise ValueError('Unknown model mapping profile')
         lines=['# Generated from SHA256-verified catalog; restart Comfy after changes.']
         for i,e in enumerate(self.entries):
+            if profile == 'fasth3-omni':
+                if PurePosixPath(e['target']).parts[0] not in ('text_encoders','vae') and e.get('profile')!=profile: continue
+            elif e.get('optional',False): continue
             found=self.discover(e)
             if found:
                 category=PurePosixPath(e['target']).parts[0]
                 lines += [f'catalog_{i}:', '  base_path: '+json.dumps(str(found.parent)),f'  {category}: .']
-        runtime=self.root/'runtime'; runtime.mkdir(exist_ok=True)
+        runtime=self.root/'runtime'
+        if profile: runtime=runtime/profile
+        runtime.mkdir(parents=True,exist_ok=True)
         tmp=runtime/'extra_model_paths.yaml.tmp'
         tmp.write_text('\n'.join(lines)+'\n',encoding='utf-8')
         tmp.replace(runtime/'extra_model_paths.yaml')
+        if profile is None and (self.root/'runtime/fasth3-omni').is_dir():
+            self.write_mapping(profile='fasth3-omni')
 
     def install(self, model_id, acknowledge):
         if not acknowledge:

@@ -7,6 +7,7 @@ import { formatSeconds } from '../../lib/format'
 import { methodModeBlock } from '../../lib/curation'
 import type { MethodInfo } from '../../lib/types'
 import { useComposer } from '../../state/composer'
+import { OmniSetup } from './OmniSetup'
 
 /**
  * Method profiles with their measured numbers attached. Experimental profiles
@@ -29,7 +30,7 @@ export function MethodPicker({ methods, comfyOnline = true }: { methods: MethodI
         {visible.map((info) => {
           const active = method === info.id
           const blocked = methodModeBlock(info.id, mode)
-          const unavailable = comfyOnline && !info.available
+          const unavailable = (info.id === 'fast_h3_omni_8step' || comfyOnline) && !info.available
           const disabled = Boolean(blocked) || unavailable
           return (
             <button
@@ -85,6 +86,7 @@ export function MethodPicker({ methods, comfyOnline = true }: { methods: MethodI
           )
         })}
       </div>
+      {methods.some((info) => info.id === 'fast_h3_omni_8step' && !info.available) ? <OmniSetup /> : null}
       {hiddenCount > 0 ? (
         <button
           type="button"
@@ -97,7 +99,7 @@ export function MethodPicker({ methods, comfyOnline = true }: { methods: MethodI
         </button>
       ) : null}
       <p className="px-2.5 text-[10px] leading-snug text-faint">
-        Tiempos medidos una vez en {BRAND.machine} (608×352, 5 s). Son referencia, no compromiso: tu toma puede tardar más.
+        Perfiles clásicos medidos en {BRAND.machine} (608×352, 5 s). Omni tiene ejemplos independientes de una imagen y 5,17 s: 86–123 s con motor caliente en RTX 4090. No es una garantía de velocidad ni HD.
       </p>
     </div>
   )

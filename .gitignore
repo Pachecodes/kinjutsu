@@ -7,6 +7,9 @@
 **/.pytest_cache/
 **/.venv/
 **/node_modules/
+*.tsbuildinfo
+# Optional Omni runtime contains a private core, venv and host-local mappings.
+runtime/fasth3-omni/
 studio/data/
 runtime/venv/
 runtime/tools/
@@ -22,8 +25,7 @@ models/text_encoders/*.safetensors
 models/vae/*.safetensors
 input/
 output/
-# Bundled LoRAs intentionally remain in the distributed folder.
-# If publishing source elsewhere, use Git LFS for them and retain upstream terms.
+# LoRAs and other model weights are downloaded/reused via the pinned manifest.
 
 # Git distribution never contains model weights or host-local configuration.
 *.safetensors

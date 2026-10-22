@@ -6,7 +6,10 @@ class PackageTests(unittest.TestCase):
    self.assertTrue((ROOT/name).is_file(),'Missing required package artifact: '+name)
  def test_model_manifest_pinned_and_complete(self):
   data=json.loads((ROOT/'models/manifest.json').read_text(encoding='utf-8'))
-  self.assertEqual(len(data['models']),6)
+  self.assertEqual(len([m for m in data['models'] if not m.get('optional',False)]),6)
+  optional=[m for m in data['models'] if m.get('optional',False)]
+  self.assertEqual(len(optional),1)
+  self.assertEqual(optional[0]['profile'],'fasth3-omni')
   self.assertEqual(sum(bool(m['included']) for m in data['models']),0)
   for m in data['models']:
    self.assertRegex(m['revision'],r'^[0-9a-f]{40}$')

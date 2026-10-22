@@ -44,6 +44,7 @@ def create_app(
     *,
     comfy_client: object | None = None,
     experimental_comfy_client: object | None = None,
+    omni_comfy_client: object | None = None,
     director_service: object | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
@@ -62,6 +63,8 @@ def create_app(
                         app.state.jobs.client_id,
                     )
                 )
+            if app.state.omni_comfy is not app.state.comfy and app.state.omni_comfy is not app.state.experimental_comfy:
+                streams.append(run_progress_listener(app.state.jobs, app.state.omni_comfy_ws_url, app.state.jobs.client_id))
             await asyncio.gather(*streams)
 
         listener = asyncio.create_task(progress_streams(), name="h3-progress-listeners")
@@ -79,6 +82,8 @@ def create_app(
             experimental_close = getattr(app.state.experimental_comfy, "aclose", None)
             if experimental_close is not None and app.state.experimental_comfy is not app.state.comfy:
                 await experimental_close()
+            if app.state.omni_comfy is not app.state.comfy and app.state.omni_comfy is not app.state.experimental_comfy:
+                await app.state.omni_comfy.aclose()
             app.state.db.close()
 
     app = FastAPI(
@@ -103,6 +108,7 @@ def create_app(
             settings.experimental_comfy_url,
             timeout=settings.comfy_timeout_seconds,
         )
+    omni_comfy = omni_comfy_client or (comfy if comfy_client is not None else ComfyClient(settings.omni_comfy_url, timeout=settings.comfy_timeout_seconds))
     db = Database(settings.db_path)
     assets = AssetService(
         db,
@@ -120,11 +126,14 @@ def create_app(
         ttl=settings.capability_ttl,
         experimental_client=experimental_comfy,
         experimental_comfy_url=settings.experimental_comfy_url,
+        omni_client=omni_comfy,
+        omni_comfy_url=settings.omni_comfy_url,
     )  # type: ignore[arg-type]
     jobs = JobService(
         db=db,
         comfy=comfy,  # type: ignore[arg-type]
         experimental_comfy=experimental_comfy,  # type: ignore[arg-type]
+        omni_comfy=omni_comfy,  # type: ignore[arg-type]
         assets=assets,
         capabilities=capabilities,
         outputs_dir=settings.outputs_dir,
@@ -176,6 +185,8 @@ def create_app(
         "ws://127.0.0.1:8226/ws",
     )
     app.state.assets = assets
+    app.state.omni_comfy = omni_comfy
+    app.state.omni_comfy_ws_url = getattr(omni_comfy, "ws_url", "ws://127.0.0.1:8237/ws")
     app.state.capabilities = capabilities
     app.state.jobs = jobs
     app.state.director = director

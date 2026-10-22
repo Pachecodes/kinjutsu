@@ -38,6 +38,7 @@ class MethodId(str, Enum):
     sage = "sage"
     sol = "sol"
     fast_h3_v2_8step = "fast_h3_v2_8step"
+    fast_h3_omni_8step = "fast_h3_omni_8step"
     taomate_3step = "taomate_3step"
 
 

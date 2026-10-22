@@ -1,5 +1,7 @@
 # FastH3 Omni: evaluación documental para H3 Studio / ComfyUI
 
+> **Nota histórica:** este documento conserva la evaluación previa a las pruebas. El estado posterior, la receta de escenas ejercitada en RTX4090 y la integración opcional están en [FASTH3-OMNI.md](FASTH3-OMNI.md). El dictamen original de «no se ha probado aquí» no describe el estado actual. Omni no sustituye la receta ganadora Character Swap.
+
 **Dictamen:** candidato experimental para Ref2VA acelerado; no reemplazo validado del flujo CharacterSwap. Hay pesos Omni nativos para ComfyUI, incluido INT8 ConvRot. No se ha probado aquí su ejecución, calidad, velocidad, memoria ni compatibilidad con LoRAs. No se descargaron pesos, instalaron dependencias ni ejecutaron trabajos GPU o servicios.
 
 ## Anuncio exacto y alcance

@@ -40,6 +40,8 @@ def estimate_seconds(*, method: str, width: int, height: int, length: int, steps
 
 
 def estimate_basis(method: str) -> str:
+    if method == "fast_h3_omni_8step":
+        return "Solo se midió una imagen y un clip corto a 512×640/124 frames. Sin estimación extrapolada: referencias, carga fría y resolución cambian el tiempo; no se garantizan dos minutos."
     profile = METHOD_PROFILES.get(method) or METHOD_PROFILES["baseline"]
     if profile["measured_seconds"] is None:
         return f"{profile['label']} is installed but has not been benchmarked on reference RTX 4090 workstation."

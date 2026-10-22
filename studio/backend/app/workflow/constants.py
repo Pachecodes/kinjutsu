@@ -13,6 +13,7 @@ from typing import Final
 # --- Checkpoints ----------------------------------------------------------
 FL2VA_INT8: Final = "minimax_h3_fl2va_pruned_int8_convrot.safetensors"
 FL2VA_W4A8: Final = "minimax_h3_fl2va_pruned_w4a8_mixed.safetensors"
+FASTH3_OMNI: Final = "fasth3_omniref_8step_pruned_int8_convrot.safetensors"
 FASTH3_V2: Final = "fastvideo_fasth3_8step_v2_pruned_int8_convrot.safetensors"
 PINKCHERRY_FL2VA_INT8_V03: Final = "PinkCherry_h3_fl2va_int8_convrot_v0.3-alpha.safetensors"
 EROSMAX_BETA4: Final = "h3ErosMax_beta4.safetensors"
@@ -198,6 +199,21 @@ BENCHMARK_BASIS: Final = {
 }
 
 METHOD_PROFILES: Final = {
+    "fast_h3_omni_8step": {
+        "id": "fast_h3_omni_8step",
+        "label": "FastH3 Omni · Escenas",
+        "blurb": "Escenas nuevas desde referencias normales; checkpoint Omni INT8 en backend independiente.",
+        "experimental": True,
+        "backend": "omni",
+        "measured_seconds": None,
+        "measured_ssim": None,
+        "basis_steps": 8,
+        "requires_nodes": [NODE_REFERENCE_TO_VIDEO, NODE_H3_SIGMA_SHIFT, NODE_LOAD_IMAGE, NODE_LOAD_VIDEO, NODE_GET_VIDEO_COMPONENTS, NODE_LOAD_AUDIO],
+        "requires_unets": [FASTH3_OMNI],
+        "requires_samplers": ["euler"],
+        "requires_schedulers": ["simple"],
+        "caveat": "Solo se midió una imagen y un clip corto. Sin LoRAs, guía alineada ni continuidad; tiempo variable sin garantía universal de dos minutos.",
+    },
     "fast_h3_v2_8step": {
         "id": "fast_h3_v2_8step",
         "label": "FastH3 V2 8-Step (Experimental)",

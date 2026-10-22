@@ -70,6 +70,7 @@ def load_manifest(path, root):
         if not re.fullmatch(r'[0-9a-f]{64}', entry['sha256']): raise ValueError('Invalid model SHA256')
         if type(entry['size']) is not int or entry['size'] <= 0: raise ValueError('Invalid model size')
         if type(entry['included']) is not bool: raise ValueError('included must be boolean')
+        if type(entry.get('optional',False)) is not bool: raise ValueError('optional must be boolean')
         safe_target(root, entry['target'])
         safe_target(root, entry['path'])
         if PurePosixPath(entry['target']).parts[0] not in ('diffusion_models','text_encoders','vae','loras'): raise ValueError('Unsupported Comfy model category')
@@ -86,7 +87,30 @@ def verify_file(path, size, sha256):
         for block in iter(lambda: handle.read(8*1024*1024), b''): h.update(block)
     return h.hexdigest() == sha256
 
-def dependency_plan(root):
+OMNI_PROFILE = 'fasth3-omni'
+OMNI_CORE_REVISION = 'b1a247c9cf9dbfda4b2c0a0c1d50950667eeaa0c'
+
+
+def omni_service(root):
+    private = root/'runtime'/OMNI_PROFILE
+    core = private/'ComfyUI'
+    return {'cmd':[str(private/'venv/Scripts/python.exe'),'-s',str(core/'main.py'),
+            '--listen','127.0.0.1','--port','8237','--disable-auto-launch',
+            '--normalvram','--reserve-vram','6','--disable-dynamic-vram',
+            '--disable-async-offload','--disable-cuda-malloc','--disable-all-custom-nodes',
+            '--use-pytorch-cross-attention','--extra-model-paths-config',str(private/'extra_model_paths.yaml')],
+            'cwd':core,'port':8237,'health':'/system_stats'}
+
+
+def dependency_plan(root, profile=None):
+    if profile == OMNI_PROFILE:
+        return {'profile':OMNI_PROFILE,'python':PYTHON_VERSION,'core_revision':OMNI_CORE_REVISION,
+                'core_repository':'https://github.com/Comfy-Org/ComfyUI.git',
+                'core':'runtime/fasth3-omni/ComfyUI','environment':'runtime/fasth3-omni/venv',
+                'lock':'dependencies/fasth3-omni.lock','listeners':{'comfy':'127.0.0.1:8237'},
+                'autostart':False,'automatic_downloads':False,'optional_trt':False,
+                'service':{k:(str(v) if isinstance(v,Path) else v) for k,v in omni_service(root).items()}}
+    if profile is not None: raise ValueError('Unknown runtime profile')
     return {'title':'Pachecodes : Kinjutsu', 'python':PYTHON_VERSION,
             'core_revision':CORE_REVISION, 'core_repository':'https://github.com/Comfy-Org/ComfyUI.git',
             'environment':'runtime/venv', 'constraints':'dependencies/constraints.txt',
@@ -209,6 +233,7 @@ def managed_models(root):
 def model_files(root, entries, download=False):
     manager=managed_models(root)
     for i,e in enumerate(entries):
+        if e.get('optional',False): continue
         if manager.discover(e): continue
         if not download: raise RuntimeError('Modelo ausente/corrupto: '+e['target'])
         job=manager.install(str(i),True)
@@ -216,6 +241,25 @@ def model_files(root, entries, download=False):
             time.sleep(1); job=manager.jobs[str(i)]
         if job['status']!='installed': raise RuntimeError(str(job))
     manager.write_mapping()
+
+def omni_models(root, download=False, require_all=True):
+    """Reuse verified auxiliaries read-only; only the optional diffusion may download."""
+    manager=managed_models(root)
+    entries=[(i,e) for i,e in enumerate(manager.entries)
+             if e['target'].split('/')[0] in ('text_encoders','vae') or e.get('profile')==OMNI_PROFILE]
+    for i,e in entries:
+        if manager.discover(e): continue
+        if e.get('profile')!=OMNI_PROFILE:
+            if require_all or download: raise RuntimeError('Missing SHA256-verified shared model: '+e['target'])
+            continue
+        if download:
+            job=manager.install(str(i),True)
+            while job['status'] in ('queued','downloading','verifying'):
+                time.sleep(1); job=manager.jobs[str(i)]
+            if job['status']!='installed': raise RuntimeError(str(job))
+        elif require_all: raise RuntimeError('Optional Omni model missing; explicitly install it in Models first')
+    manager.write_mapping(profile=OMNI_PROFILE)
+
 
 def verify_package(root):
     entries=load_manifest(root/'models/manifest.json',root/'models')
@@ -225,7 +269,7 @@ def verify_package(root):
             raise RuntimeError('Bundled weight missing/corrupt: '+e['target'])
     for p in ('dependencies/requirements.lock','studio/backend','studio/frontend/package-lock.json','workflows/approved-api.json'):
         if not (root/p).exists(): raise RuntimeError('Package component missing: '+p)
-    return {'models':len(entries),'included':sum(e['included'] for e in entries),'base_bytes':sum(e['size'] for e in entries if not e['included']), 'patches':'verified'}
+    return {'models':len(entries),'included':sum(e['included'] for e in entries),'base_bytes':sum(e['size'] for e in entries if not e['included'] and not e.get('optional',False)), 'optional_bytes':sum(e['size'] for e in entries if e.get('optional',False)), 'patches':'verified'}
 
 def ensure_workstation_profile(root):
     """Expose this verified managed installation to the local UI; never adopt externals."""
@@ -255,7 +299,7 @@ def ensure_workstation_profile(root):
 
 def install(root):
     entries=load_manifest(root/'models/manifest.json',root/'models')
-    prerequisites(root,entries); verify_package(root)
+    prerequisites(root,[e for e in entries if not e.get('optional',False)]); verify_package(root)
     uv=tool(root,'uv'); git=tool(root,'git'); py=python_exe(root)
     envroot=root/'runtime/venv'
     if envroot.exists() and not py.exists(): raise RuntimeError('Existing incomplete venv; inspect manually, no destructive recreation')
@@ -281,6 +325,77 @@ def install(root):
     (root/'runtime/installed.json').write_text(json.dumps({'root':str(root),'configuration_sha256':configuration_digest(root),'lock_sha256':hashlib.sha256((root/'dependencies/requirements.lock').read_bytes()).hexdigest(),'verified':True}),encoding='utf-8')
     ensure_workstation_profile(root)
     print('Instalacion verificada. Ningun servicio iniciado.')
+
+def omni_fingerprint(root):
+    return hashlib.sha256((root/'dependencies/fasth3-omni.lock').read_bytes()).hexdigest()
+
+
+def verify_omni_runtime(root, models=True):
+    service=omni_service(root); core=service['cwd']; py=Path(service['cmd'][0])
+    private=root/'runtime'/OMNI_PROFILE
+    # Exact native core, not the older CharacterSwap detection/backport.
+    git=tool(root,'git')
+    if run([git,'-C',core,'rev-parse','HEAD'],capture=True).strip()!=OMNI_CORE_REVISION:
+        raise RuntimeError('Unexpected Omni native PDD core revision')
+    run([git,'-C',core,'diff','--exit-code','HEAD','--'])
+    for relative in ('comfy/model_detection.py','comfy/ldm/minimax/model.py'):
+        if 'pdd_steps' not in (core/relative).read_text(encoding='utf-8'):
+            raise RuntimeError('Omni requires native PDD heads and sampler support')
+    pins=dict(re.findall(r'^([A-Za-z0-9_-]+)==([^\s;]+)',(root/'dependencies/fasth3-omni.lock').read_text(),re.M))
+    check="import sys,site,importlib.metadata as m,json; assert sys.version_info[:3]==(3,12,10); assert sys.prefix!=sys.base_prefix; assert not site.ENABLE_USER_SITE; pins=json.loads("+repr(json.dumps(pins))+"); assert all(m.version(n)==v for n,v in pins.items()); forbidden={'tensorrt','tensorrt-cu13','sageattention','triton','triton-windows'}; assert not forbidden.intersection(d.metadata['Name'].lower().replace('_','-') for d in m.distributions())"
+    run([py,'-s','-c',check])
+    # torchaudio is intentionally ABI-compatible with audited torch, not resolver-upgraded.
+    run([py,'-s','-c',"import torch,torchaudio; assert torch.__version__=='2.13.0+cu130'; assert torchaudio.functional.resample(torch.zeros(1,240),24000,16000).shape[-1]==160"])
+    if models: omni_models(root)
+    return True
+
+
+def register_omni_workstation(root):
+    service=omni_service(root); core=service['cwd']; private=root/'runtime'/OMNI_PROFILE
+    receipt=json.loads((private/'installed.json').read_text(encoding='utf-8'))
+    if receipt.get('root')!=str(root) or receipt.get('verified') is not True or receipt.get('lock_sha256')!=omni_fingerprint(root):
+        raise RuntimeError('Omni installation receipt missing or stale')
+    target=root/'runtime/workstation.json'
+    data=json.loads(target.read_text(encoding='utf-8-sig')) if target.exists() else {'version':1,'runtimes':[]}
+    if data.get('version')!=1 or not isinstance(data.get('runtimes'),list): raise RuntimeError('Invalid workstation configuration')
+    for folder in (root/'models',core/'output'): folder.mkdir(parents=True,exist_ok=True)
+    item={'key':OMNI_PROFILE,'label':'FastH3 Omni (isolated native PDD32)','approved':True,
+          'root':str(core),'cwd':str(core),'port':8237,'executable':service['cmd'][0],'argv':service['cmd'][1:],
+          'model_roots':[str(root/'models')], 'folders':{'models':str(root/'models'),'outputs':str(core/'output')}}
+    collisions=[r for r in data['runtimes'] if r.get('key')==OMNI_PROFILE or r.get('root')==str(core) or r.get('port')==8237]
+    if collisions:
+        if collisions!=[item]: raise RuntimeError('Existing Omni authorization differs; inspect locally, not overwritten')
+        return False
+    data['runtimes'].append(item)
+    tmp=target.with_suffix('.tmp'); tmp.write_text(json.dumps(data,indent=2),encoding='utf-8'); tmp.replace(target)
+    return True
+
+
+def install_omni(root, download=False):
+    """Explicit isolated install. No GPU server starts; weight download is separately opt-in."""
+    root=Path(root).resolve(); private=root/'runtime'/OMNI_PROFILE
+    prerequisites(root,[])  # No default weights or 22GB download implicit in provisioning.
+    uv=tool(root,'uv'); git=tool(root,'git'); service=omni_service(root)
+    py=Path(service['cmd'][0]); envroot=private/'venv'; core=service['cwd']
+    private.mkdir(parents=True,exist_ok=True)
+    if envroot.exists() and not py.exists(): raise RuntimeError('Incomplete private Omni venv; inspect manually')
+    if not py.exists(): run([uv,'venv','--python',PYTHON_VERSION,'--managed-python',envroot])
+    run([py,'-s','-c',"import sys,site; assert sys.version_info[:3]==(3,12,10); assert sys.prefix!=sys.base_prefix; assert not site.ENABLE_USER_SITE"])
+    run([uv,'pip','install','--python',py,'--no-deps','--require-hashes','--only-binary',':all:',
+         '--index','https://download.pytorch.org/whl/cu130','--index-strategy','unsafe-best-match',
+         '-r',root/'dependencies/fasth3-omni.lock'])
+    if not core.exists():
+        run([git,'init',core]); run([git,'-C',core,'remote','add','origin','https://github.com/Comfy-Org/ComfyUI.git'])
+        run([git,'-C',core,'fetch','--depth','1','origin',OMNI_CORE_REVISION])
+        run([git,'-C',core,'checkout','--detach',OMNI_CORE_REVISION])
+    # Never apply CharacterSwap patches or install its AddGuide custom node here.
+    verify_omni_runtime(root,models=False)
+    omni_models(root,download=download,require_all=False)
+    (private/'installed.json').write_text(json.dumps(dict(root=str(root),profile=OMNI_PROFILE,
+        core_revision=OMNI_CORE_REVISION,lock_sha256=omni_fingerprint(root),verified=True)),encoding='utf-8')
+    register_omni_workstation(root)
+    print('FastH3 Omni installed and registered, not started. Models remain explicit opt-in.')
+
 
 def verify_core_postimages(root):
     provenance=json.loads((root/'runtime/patches/provenance.json').read_text())
@@ -356,6 +471,7 @@ def child_env(root):
     env.update(cfg.get('environment', {}))
     env.update(PYTHONUTF8='1',PYTHONIOENCODING='utf-8',PYTHONNOUSERSITE='1',
                H3_COMFY_URL='http://127.0.0.1:8218',H3_EXPERIMENTAL_COMFY_URL='http://127.0.0.1:8218',
+               H3_OMNI_COMFY_URL='http://127.0.0.1:8237',
                H3_DATA_DIR=str(root/'runtime/studio-data'),
                H3_FRONTEND_DIST=str(safe_target(root,cfg.get('frontend_dist','studio/frontend/dist'))),
                H3_DIRECTOR_ENABLED='false',H3_DIRECTOR_AUTOSTART_OLLAMA='false',H3_DIRECTOR_OPENAI_MANAGED_GPU='false',
@@ -485,15 +601,44 @@ def stop(root):
         terminate_record(record)
         receipt.unlink(); print(name+': stopped identity-matched owned processes')
 
+def stop_omni(root):
+    path=root/'runtime/state/workstation-fasth3-omni.json'
+    if not path.is_file(): return
+    receipt=json.loads(path.read_text(encoding='utf-8'))
+    if receipt.get('root')!=str(root) or receipt.get('profile')!=OMNI_PROFILE:
+        raise RuntimeError('Omni receipt belongs to another installation; no process changed')
+    record=receipt.get('process',{})
+    if not is_owned(record):
+        print('Omni stale/unverified receipt; no process changed'); return
+    terminate_record(record)
+    path.unlink()
+
+
 def main():
     parser=argparse.ArgumentParser(description='Pachecodes : Kinjutsu portable lifecycle')
     parser.add_argument('command',choices=('install','start','stop','verify','verify-package','plan','patch-check','launch'))
     parser.add_argument('--root',type=Path,default=ROOT)
     parser.add_argument('--dry-run',action='store_true')
     parser.add_argument('--core',type=Path)
+    parser.add_argument('--profile',choices=(OMNI_PROFILE,))
+    parser.add_argument('--download-models',action='store_true',help='Explicit opt-in: download only missing optional Omni diffusion model')
     args=parser.parse_args(); root=args.root.resolve()
+    if args.download_models and (args.profile!=OMNI_PROFILE or args.command!='install'):
+        parser.error('--download-models requires install --profile fasth3-omni')
     if args.command=='plan' or args.dry_run:
-        plan=dependency_plan(root); plan['models']=load_manifest(root/'models/manifest.json',root/'models'); print(json.dumps(plan,indent=2)); return
+        plan=dependency_plan(root,profile=args.profile)
+        entries=load_manifest(root/'models/manifest.json',root/'models')
+        plan['models']=[e for e in entries if (e.get('profile')==OMNI_PROFILE or e['target'].startswith(('text_encoders/','vae/'))) ] if args.profile else [e for e in entries if not e.get('optional',False)]
+        print(json.dumps(plan,indent=2)); return
+    if args.profile:
+        if args.command=='install': install_omni(root,download=args.download_models); return
+        if args.command=='verify': verify_omni_runtime(root); return
+        if args.command=='start':
+            sys.path.insert(0,str(root/'studio/backend'))
+            from app.services.workstation import Workstation
+            print(json.dumps(Workstation(root).start(profile=OMNI_PROFILE))); return
+        if args.command=='stop': stop_omni(root); return
+        parser.error('This command does not support an optional profile')
     if args.command=='verify-package': print(json.dumps(verify_package(root),indent=2)); return
     if args.command=='patch-check': apply_core(root,args.core or root/'runtime/ComfyUI',check_only=True); return
     if args.command=='launch':

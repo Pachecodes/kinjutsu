@@ -31,6 +31,7 @@
 
 <table>
   <tr><td width="34%">🎭 <b>Character Swap HD Turbo8</b></td><td>Cambia la persona de un vídeo guía por la identidad de un retrato, con la receta aprobada y el prompt editable.</td></tr>
+  <tr><td>🎬 <b>FastH3 Omni · Escenas</b></td><td>Segunda receta opcional para crear escenas nuevas desde referencias, con acción y audio generados; motor aislado y checkpoint descargable verificado.</td></tr>
   <tr><td>🎞️ <b>Guía alineada a 24 fps</b></td><td>Prepara la guía con CPU al tamaño y los frames exactos de la salida; explica salida vs. guía vs. cobertura real del original.</td></tr>
   <tr><td>✍️ <b>Prompts sin IA</b></td><td>Plantillas deterministas (Character Swap, Motion y los modos base): ordenan lo que escribes, sin agentes ni tokens.</td></tr>
   <tr><td>📦 <b>Modelos verificados</b></td><td>Instala solo lo que falta, tras aceptar licencias; reutiliza pesos existentes por SHA256 sin copiarlos.</td></tr>
@@ -68,6 +69,8 @@
 Incluye Studio sanitizado, manifiestos de los dos LoRA, workflows y scripts. No necesita Claude, Hermes, suscripciones ni claves API; Director/chat está desactivado por defecto.
 
 > **Repositorio de código, sin pesos incluidos.** Copia o descarga todo este repositorio y abre `INICIAR.vbs`. El instalador descarga los seis artefactos fijados, incluidos los dos LoRA, solo si no están ya verificados en las carpetas autorizadas. No requiere agentes ni API keys. Las referencias históricas de verificación a dos LoRA incluidos corresponden al paquete portable local; aquí `included:false` es explícito para los seis. Los modelos no se alojan en GitHub.
+
+**Omni es opcional:** el nuevo checkpoint FastH3 Omni INT8 (~22.2GB) se solicita por separado desde el catálogo de modelos. No se añade a la descarga base Character Swap ni se mezclan las dos recetas. Reutiliza encoder/VAEs verificados y requiere su propio motor compatible; detalles en [FastH3 Omni · Escenas](docs/FASTH3-OMNI.md).
 
 ## Lo más fácil
 
@@ -109,6 +112,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Stop-Kinjutsu.ps1
 ```
 
 No se instala autoarranque ni se publican servicios. Si un puerto ya está ocupado, el lanzador informa del conflicto sin matar otros procesos.
+
+## Dos recetas separadas
+
+- **Character Swap · HD Turbo8:** retrato + actuación de un video guía, con la cadena Turbo8 → Character Swap v1.1 que se detalla abajo.
+- **FastH3 Omni · Escenas:** referencias + prompt para escenas nuevas y diálogo generado. Euler/simple8, guidance1, shifts12/3, sin LoRAs; preset de referencia `max` y motor opcional separado en8237. Véase [receta y descarga](docs/FASTH3-OMNI.md). Los ejemplos5.17s midieron86–123s calientes en una4090; no es una garantía de duración ni una comparación con Character Swap.
+
+No combinar los adaptadores de Character Swap con Omni: el experimento no produjo un reemplazo convincente y no forma parte de las recetas recomendadas.
 
 ## La receta
 

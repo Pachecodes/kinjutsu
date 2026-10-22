@@ -77,7 +77,7 @@ FIRST_REFERENCE_ID = 15
 FRAME_MODES = {Mode.text, Mode.first_frame, Mode.first_last}
 REFERENCE_MODES = {Mode.ref2va, Mode.performance}
 W4A8_METHODS = {MethodId.w4a8_lightx2v, MethodId.w4a8_lightx2v_trt, MethodId.w4a8_latent2x_refine3}
-EXPERIMENTAL_METHODS = {MethodId.fast_h3_v2_8step, MethodId.taomate_3step}
+EXPERIMENTAL_METHODS = {MethodId.fast_h3_v2_8step, MethodId.taomate_3step, MethodId.fast_h3_omni_8step}
 
 _PREFIX_SAFE = re.compile(r"[^A-Za-z0-9_-]+")
 
@@ -154,6 +154,8 @@ def encoder_for(variant: EncoderVariant) -> str:
 
 
 def _loader_node(request: GenerationRequest) -> tuple[dict[str, Any], str]:
+    if request.method is MethodId.fast_h3_omni_8step:
+        return ({"class_type": C.NODE_UNET_LOADER, "inputs": {"unet_name": C.FASTH3_OMNI, "weight_dtype": "default"}}, C.FASTH3_OMNI)
     if request.method is MethodId.fast_h3_v2_8step:
         return (
             {"class_type": C.NODE_UNET_LOADER, "inputs": {"unet_name": C.FASTH3_V2, "weight_dtype": "default"}},
@@ -355,6 +357,11 @@ def build_workflow(
     filename_prefix: str,
 ) -> BuiltWorkflow:
     """Build the Comfy prompt graph for one render. Pure."""
+    if request.method is MethodId.fast_h3_omni_8step:
+        from .validation import validate_omni, has_errors
+        issues = validate_omni(request)
+        if has_errors(issues):
+            raise WorkflowBuildError("; ".join(i.message for i in issues if i.severity.value == "error"))
     if request.method is MethodId.ref2va_vsa:
         if request.mode is not Mode.ref2va:
             raise WorkflowBuildError("Ref2VA VSA is validated only for References mode.")
@@ -443,7 +450,7 @@ def build_workflow(
         model_link = [node_id, 0]
     patch = _patch_node(request, model_link)
     patched_model: Link = [ID_PATCH, 0] if patch else model_link
-    if request.method is MethodId.ref2va_vsa:
+    if request.method in {MethodId.ref2va_vsa, MethodId.fast_h3_omni_8step}:
         patched_model = [ID_SIGMA_SHIFT, 0]
     elif request.method is MethodId.fast_h3_v2_8step:
         patched_model = [ID_BLOCK_SPARSE, 0]
@@ -507,6 +514,11 @@ def build_workflow(
                 "sink_conditioning": "exact_kv_and_rows",
                 "verbose": False,
             },
+        }
+    if request.method is MethodId.fast_h3_omni_8step:
+        prompt[ID_SIGMA_SHIFT] = {
+            "class_type": C.NODE_H3_SIGMA_SHIFT,
+            "inputs": {"model": [ID_UNET, 0], "shift_video": 12, "shift_audio": 3},
         }
     prompt[ID_CONDITIONING] = _conditioning_node(conditioning_request, wiring)
     conditioning_link = [ID_CONDITIONING, 0]
