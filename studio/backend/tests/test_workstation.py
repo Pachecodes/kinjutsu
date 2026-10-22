@@ -162,6 +162,131 @@ def test_adopt_root_verifies_manifest_before_any_write(tmp_path,monkeypatch):
     with pytest.raises(WorkstationError): w.select_root('../escape',True)
 
 
+def test_open_actions_only_selected_allowlisted_targets(tmp_path,monkeypatch):
+    import app.services.workstation as module
+    w,item=selected_station(tmp_path,monkeypatch)
+    calls=[]; browser=[]
+    monkeypatch.setattr(module.subprocess,'Popen',lambda *a,**kw:calls.append((a,kw)))
+    monkeypatch.setattr(module.webbrowser,'open',lambda url:browser.append(url) or True)
+    assert w.open_folder('models')['requested'] is True
+    assert calls[0][0][0][1]==item['folders']['models']
+    assert calls[0][1]['shell'] is False
+    with pytest.raises(module.WorkstationError): w.open_folder('../escape')
+    with pytest.raises(module.WorkstationError): w.open_comfy()
+    monkeypatch.setattr(w,'status',lambda:dict(state='online',url=f"http://127.0.0.1:{item['port']}"))
+    assert w.open_comfy()['requested'] is True
+    assert browser==[f"http://127.0.0.1:{item['port']}"]
+
+
+def test_http_contract_local_origin_and_payload_restrictions(tmp_path,monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.services.workstation import router
+    w,item=selected_station(tmp_path,monkeypatch)
+    app=FastAPI(); app.include_router(router,prefix='/api'); app.state.workstation=w
+    client=TestClient(app)
+    assert client.get('/api/workstation/status').status_code==200
+    assert client.get('/api/workstation/discover').status_code==200
+    assert client.get('/api/workstation/roots').status_code==200
+    assert client.post('/api/workstation/comfy/start',json={'executable':'evil'}).status_code==422
+    assert client.post('/api/workstation/comfy/open',json={'url':'https://evil.invalid'}).status_code==422
+    assert client.post('/api/workstation/folders/unknown/open',json={}).status_code==422
+    assert client.post('/api/workstation/select',json={'candidate_id':'../escape','acknowledge':True}).status_code==409
+    assert client.post('/api/workstation/comfy/open',json={},headers={'Origin':'https://evil.invalid'}).status_code==403
+    assert client.get('/api/workstation/status',headers={'Host':'evil.invalid'}).status_code==403
+    remote=TestClient(app,client=('192.0.2.1',1234))
+    assert remote.post('/api/workstation/comfy/open',json={}).status_code==403
+    assert 'FolderKind' in str(app.openapi()) or 'outputs' in str(app.openapi())
+
+
+def test_changed_config_requires_reselection(tmp_path,monkeypatch):
+    w,item=selected_station(tmp_path,monkeypatch)
+    cfg=json.loads((tmp_path/'runtime/workstation.json').read_text()); cfg['runtimes'][0]['label']='Changed'
+    (tmp_path/'runtime/workstation.json').write_text(json.dumps(cfg))
+    assert w.status()['state']=='configuration_required'
+
+
+def test_failed_identity_recording_never_duplicates_child(tmp_path,monkeypatch):
+    import app.services.workstation as module
+    w,item=selected_station(tmp_path,monkeypatch)
+    monkeypatch.setattr(w,'port_free',lambda port:True)
+    calls=[]
+    class Child:
+        pid=123
+        def poll(self): return None
+    monkeypatch.setattr(module.subprocess,'Popen',lambda *a,**kw:calls.append(a) or Child())
+    def unavailable(pid): raise OSError('unavailable')
+    monkeypatch.setattr(module,'process_record',unavailable)
+    with pytest.raises(module.WorkstationError): w.start()
+    with pytest.raises(module.WorkstationError): w.start()
+    assert len(calls)==1
+
+
+def test_openapi_exposes_ui_capability_fields():
+    from fastapi import FastAPI
+    from app.services.workstation import router
+    app=FastAPI(); app.include_router(router,prefix='/api')
+    schema=app.openapi()
+    response=schema['paths']['/api/workstation/status']['get']['responses']['200']['content']['application/json']['schema']
+    assert response['$ref'].endswith('/WorkstationStatus')
+    assert 'capabilities' in schema['components']['schemas']['WorkstationStatus']['properties']
+    assert 'generation_binding' in schema['components']['schemas']['WorkstationStatus']['properties']
+
+
+def test_bounded_discovery_does_not_recurse_or_inspect_beyond_cap(tmp_path,monkeypatch):
+    from app.services.workstation import Workstation
+    cfg=configured(tmp_path); core=Path(cfg['runtimes'][0]['root'])
+    (tmp_path/'runtime/workstation.json').unlink()
+    paths=[tmp_path/f'nonexistent-{i}' for i in range(64)]+[core]
+    assert Workstation(tmp_path,standard_roots=paths).discover()['runtimes']==[]
+    assert Workstation(tmp_path,standard_roots=[tmp_path]).discover()['runtimes']==[]
+
+
+def test_probe_timeout_redirect_and_nonlocal_port_validation(tmp_path,comfy_server):
+    from app.services.workstation import Workstation
+    server,handler=comfy_server
+    def redirect(self):
+        self.send_response(302); self.send_header('Location','https://example.invalid/'); self.end_headers()
+    handler.do_GET=redirect
+    assert Workstation(tmp_path,standard_roots=[]).probe(server.server_port) is False
+
+
+def test_real_cpu_process_receipt_rejects_pid_reuse():
+    import os
+    from app.services.workstation import process_record,record_alive
+    record=process_record(os.getpid())
+    assert record_alive(record) is True
+    assert record_alive(dict(record,create_time=record['create_time']-1)) is False
+    assert record_alive(dict(record,cmdline=['foreign'])) is False
+
+
+def test_registered_on_studio_api():
+    from fastapi import FastAPI
+    from app.api import router
+    app=FastAPI(); app.include_router(router)
+    assert '/api/workstation/status' in app.openapi()['paths']
+
+
+def test_support_hidden_utf8_portable_interpreter_prefix(tmp_path):
+    from app.services.workstation import Workstation
+    cfg=configured(tmp_path); argv=cfg['runtimes'][0]['argv']
+    cfg['runtimes'][0]['argv']=['-X','utf8']+argv
+    (tmp_path/'runtime/workstation.json').write_text(json.dumps(cfg))
+    assert Workstation(tmp_path,standard_roots=[]).discover()['runtimes'][0]['approved'] is True
+
+
+def test_probe_read_timeout_is_bounded(tmp_path,comfy_server):
+    import time
+    from app.services.workstation import Workstation
+    server,handler=comfy_server
+    def delayed(self):
+        time.sleep(0.8)
+    handler.do_GET=delayed
+    start=time.monotonic()
+    assert Workstation(tmp_path,standard_roots=[]).probe(server.server_port) is False
+    assert time.monotonic()-start < 1.5
+
+
 def configured(tmp_path, *, port=8188):
     core=tmp_path/'existing-comfy'; core.mkdir()
     (core/'main.py').write_text('# fixture')

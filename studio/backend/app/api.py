@@ -47,6 +47,8 @@ from .services.model_manager import router as model_manager_router
 router.include_router(model_manager_router)
 from .services.offline_prompts import router as offline_prompts_router
 router.include_router(offline_prompts_router)
+from .services.workstation import router as workstation_router
+router.include_router(workstation_router)
 
 
 def _presets_with_availability(capabilities: CapabilityResponse) -> list[dict[str, Any]]:

@@ -28,7 +28,7 @@ try {
     }
     if ($needsInstall) {
         Add-Type -AssemblyName System.Windows.Forms
-        $message = 'Primera instalacion: RTX 4090 24 GB y controlador CUDA 13; Internet; hasta 42.470.585.471 bytes de modelos base (se reutilizan archivos verificados), mas 30 GB para runtime/cache; 120 GB libres recomendados. Lea licenses/ y THIRD_PARTY_NOTICES.md. BFS restringe reventa y servicios alojados. No requiere Claude, Hermes ni claves API. Acepta las licencias y las descargas fijadas?'
+        $message = 'Primera instalacion: RTX 4090 24 GB y controlador CUDA 13; Internet; hasta 42.470.585.471 bytes de modelos base (se reutilizan archivos verificados), mas 30 GB para runtime/cache; 120 GB libres recomendados. Lea licenses/ y THIRD_PARTY_NOTICES.md. La licencia H3 excluye EE.UU., UE, Reino Unido y Corea del Sur; alli se requiere autorizacion separada de MiniMax. BFS restringe reventa y servicios alojados. No requiere Claude, Hermes ni claves API. Acepta las licencias y las descargas fijadas?'
         $answer = [System.Windows.Forms.MessageBox]::Show($message, 'Kinjutsu - licencias y descargas', 'YesNo', 'Information')
         if ($answer -ne 'Yes') { throw 'Instalacion cancelada. No se han descargado modelos.' }
         # Preflight before downloading or executing bootstrap tools.

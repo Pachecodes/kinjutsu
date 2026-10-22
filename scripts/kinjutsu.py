@@ -227,6 +227,32 @@ def verify_package(root):
         if not (root/p).exists(): raise RuntimeError('Package component missing: '+p)
     return {'models':len(entries),'included':sum(e['included'] for e in entries),'base_bytes':sum(e['size'] for e in entries if not e['included']), 'patches':'verified'}
 
+def ensure_workstation_profile(root):
+    """Expose this verified managed installation to the local UI; never adopt externals."""
+    root=Path(root).resolve(); target=root/'runtime/workstation.json'
+    if target.exists():return False  # Never overwrite administrator authorization.
+    receipt=root/'runtime/installed.json'
+    if not receipt.is_file():return False
+    info=json.loads(receipt.read_text(encoding='utf-8-sig'))
+    if info.get('verified') is not True or Path(info.get('root','')).resolve()!=root:return False
+    core=root/'runtime/ComfyUI'
+    if not all((core/p).exists() for p in ('main.py','folder_paths.py','comfy')):return False
+    service=service_commands(root)['comfy']
+    if not Path(service['cmd'][0]).is_file():return False
+    for folder in (root/'models',root/'models/loras',core/'output'):folder.mkdir(parents=True,exist_ok=True)
+    roots=[root/'models']
+    extra=root/'runtime/model-roots.json'
+    if extra.is_file():
+        for raw in json.loads(extra.read_text(encoding='utf-8-sig')).get('roots',[]):
+            p=Path(raw)
+            if p.is_absolute() and p.is_dir() and p.resolve() not in roots:roots.append(p.resolve())
+    data={'version':1,'runtimes':[{'key':'managed','label':'Kinjutsu ComfyUI','approved':True,
+          'root':str(core),'cwd':str(core),'port':8218,'executable':service['cmd'][0],'argv':service['cmd'][1:],
+          'model_roots':[str(p) for p in roots],
+          'folders':{'models':str(root/'models'),'loras':str(root/'models/loras'),'outputs':str(core/'output')}}]}
+    tmp=target.with_suffix('.tmp');tmp.write_text(json.dumps(data,indent=2),encoding='utf-8');tmp.replace(target)
+    return True
+
 def install(root):
     entries=load_manifest(root/'models/manifest.json',root/'models')
     prerequisites(root,entries); verify_package(root)
@@ -253,6 +279,7 @@ def install(root):
     (root/'runtime/tool-paths.json').write_text(json.dumps(pair),encoding='utf-8')
     verify_runtime(root)
     (root/'runtime/installed.json').write_text(json.dumps({'root':str(root),'configuration_sha256':configuration_digest(root),'lock_sha256':hashlib.sha256((root/'dependencies/requirements.lock').read_bytes()).hexdigest(),'verified':True}),encoding='utf-8')
+    ensure_workstation_profile(root)
     print('Instalacion verificada. Ningun servicio iniciado.')
 
 def verify_core_postimages(root):
@@ -391,6 +418,7 @@ def configuration_digest(root):
 
 def start(root):
     import psutil
+    ensure_workstation_profile(root)
     services=service_commands(root); state=root/'runtime/state'; state.mkdir(parents=True,exist_ok=True)
     logs=root/'runtime/logs'; logs.mkdir(parents=True,exist_ok=True)
     reused=set()

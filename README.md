@@ -75,6 +75,14 @@ No se instala autoarranque ni se publican servicios. Si un puerto ya está ocupa
 - `skills/`: procedimientos generalizados para instalación, operación, prompts y QA.
 - `tests/`: pruebas repetibles. `licenses/` y `THIRD_PARTY_NOTICES.md`: términos de terceros.
 
+## Comfy existente y carpetas
+
+El backend incluye búsqueda acotada de instalaciones, selección autorizada, inicio/apertura de Comfy y apertura de carpetas Modelos/LoRAs/Resultados. Contrato: `docs/WORKSTATION-API.md`; encargo visual: `docs/CLAUDE-WORKSTATION-UI.md`. Los botones nuevos de workstation todavía deben añadirse al frontend.
+
+Son acciones **locales**: solo loopback, Host y Origin válidos. No se exponen como control remoto por Tailnet. No hay stop/restart, no se matan procesos ajenos ni se copian pesos. La instalación propia verificada genera un perfil aprobado si falta; otras instalaciones detectadas requieren aprobación administrativa. Seleccionar una instalación no cambia automáticamente la ruta de generación de Studio: revisar `generation_binding` y configurar la URL al estar idle.
+
+Para verificar este checkout con runtime privado ignorado por Git, primero stagear los archivos de código y ejecutar `python scripts/release_gate.py --git-tracked --write-inventory --verify-inventory`. El inventario no incorpora configuración local, recibos, logs ni datos ignorados. Un clon limpio también admite la verificación completa sin esa opción.
+
 ## Prompts sin agente ni tokens
 
 `prompting/` incluye seis plantillas deterministas: Character Swap alineado, Motion Ref2VA y los cuatro modos Base. Se pueden usar desde `scripts/build_prompt.py` o mediante `GET /api/prompting/catalog` y `POST /api/prompting/build`. La guía está en `prompting/README.es.md` y el contrato para integrar formularios en `prompting/INTEGRATION.md`. Los skills completos se incluyen como referencia opcional, no como dependencia para generar.
@@ -86,6 +94,8 @@ Estas plantillas organizan las descripciones que tú proporcionas; no ven tus ar
 Esta receta usa guía visual **sin copiar el audio original**. El audio de salida lo genera H3. El movimiento de boca puede seguir al original, pero eso no garantiza sincronización de palabras. Conservar audio original o usar otra voz es una operación separada. No se ha certificado esta receta para generar diálogo español exacto; si necesitas español, define primero el origen de la voz y verifica el resultado escuchándolo.
 
 ## Licencias y límites
+
+**Antes de instalar o compartir:** la licencia pública de H3 excluye EE. UU., UE, Reino Unido y Corea del Sur; allí indica que se debe obtener autorización separada de MiniMax. Esto aplica también a sus derivados. Consulta el texto completo en `licenses/MINIMAX-H3-LICENSE.txt`.
 
 Uso local interno. La licencia BFS de Character Swap permite compartir los pesos con su licencia y crear medios comerciales, pero no revenderlos como producto independiente ni ofrecer su funcionalidad como API/SaaS hospedado. Consulta `THIRD_PARTY_NOTICES.md` para atribución y términos completos. Este proyecto no relicencia H3 ni modelos de terceros.
 

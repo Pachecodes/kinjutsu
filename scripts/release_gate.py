@@ -7,16 +7,22 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 
 ROOT=Path(__file__).resolve().parents[1]
 FORBIDDEN_DIRS={'.venv','venv','node_modules','__pycache__','.pytest_cache','.mypy_cache','uploads','outputs','thumbs'}
 TEXT={'.py','.ts','.tsx','.js','.json','.md','.txt','.html','.css','.ps1','.vbs','.yaml','.yml'}
 
-def check(root,terms=()):
+def check(root,terms=(),tracked=None):
     failures=[];files=[]
-    for p in root.rglob('*'):
+    candidates=(root/p for p in tracked) if tracked is not None else root.rglob('*')
+    for p in candidates:
+        if not p.resolve().is_relative_to(root.resolve()):
+            failures.append('unsafe payload path');continue
         if '.git' in p.relative_to(root).parts:continue
-        if not p.is_file():continue
+        if not p.is_file():
+            if tracked is not None:failures.append(p.relative_to(root).as_posix()+': tracked file missing')
+            continue
         rel=p.relative_to(root).as_posix()
         if p.is_symlink():failures.append(rel+': symlink not transferable')
         if any(x in FORBIDDEN_DIRS for x in p.relative_to(root).parts):failures.append(rel+': runtime/cache directory')
@@ -37,7 +43,14 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--root',type=Path,default=ROOT)
     parser.add_argument('--forbid-term',action='append',default=[])
     parser.add_argument('--write-inventory',action='store_true');parser.add_argument('--verify-inventory',action='store_true')
-    args=parser.parse_args();root=args.root.resolve();failures,files=check(root,args.forbid_term)
+    parser.add_argument('--git-tracked',action='store_true',help='Inventory only staged/tracked source; exclude private gitignored local runtime')
+    args=parser.parse_args();root=args.root.resolve()
+    tracked=None
+    if args.git_tracked:
+        raw=subprocess.check_output(['git','-C',str(root),'ls-files','-z'])
+        tracked=[name.decode('utf-8') for name in raw.split(b'\0') if name]
+        if not tracked:raise ValueError('No tracked source files; stage source before creating inventory')
+    failures,files=check(root,args.forbid_term,tracked)
     if failures:print(json.dumps({'privacy_failures':failures},indent=2));raise SystemExit(1)
     if args.write_inventory:
         rows=[]

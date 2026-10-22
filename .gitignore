@@ -34,4 +34,5 @@ runtime/installed.json
 runtime/model-roots.json
 runtime/workstation.json
 runtime/workstation-state.json
+runtime/workstation-selection.json
 runtime/download-receipts/

@@ -7,6 +7,10 @@ from pathlib import Path
 import threading
 import subprocess
 import time
+import webbrowser
+from typing import Literal
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def process_record(pid):
@@ -82,7 +86,10 @@ class Workstation:
                 if not isinstance(argv,list) or not argv or len(argv)>128 or not all(isinstance(a,str) and '\x00' not in a for a in argv):
                     raise WorkstationError('Invalid fixed argument vector')
                 prefix=0
-                while prefix<len(argv) and argv[prefix] in ('-s','-u'): prefix+=1
+                while prefix<len(argv):
+                    if argv[prefix] in ('-s','-u'): prefix+=1
+                    elif argv[prefix:prefix+2]==['-X','utf8']: prefix+=2
+                    else: break
                 if prefix>=len(argv) or not Path(argv[prefix]).is_absolute() or Path(argv[prefix]).resolve()!=core/'main.py':
                     raise WorkstationError('Interpreter must execute the exact configured main.py')
                 tail=argv[prefix+1:]
@@ -148,17 +155,18 @@ class Workstation:
 
     def selected(self):
         path=self.root/'runtime/workstation-selection.json'
-        identifier=json.loads(path.read_text()).get('selected_id') if path.is_file() else None
+        selection=json.loads(path.read_text()) if path.is_file() else {}
+        identifier=selection.get('selected_id')
         item=self.approved().get(identifier)
-        return item if item and item.get('approved') is True else None
+        return item if item and item.get('approved') is True and selection.get('configuration_sha256')==self.launch_digest(item) else None
 
     def select(self, identifier, acknowledge):
         with self.lock:
             item=self.approved().get(identifier)
             if not acknowledge or not item or item.get('approved') is not True:
                 raise WorkstationError('Explicit selection and local administrator approval required')
-            atomic_json(self.root/'runtime/workstation-selection.json',dict(selected_id=identifier))
-            return dict(selected_id=identifier,selected=True)
+            atomic_json(self.root/'runtime/workstation-selection.json',dict(selected_id=identifier,configuration_sha256=self.launch_digest(item)))
+            return dict(selected_id=identifier,selected=True,generation_routing_changed=False)
 
     def select_root(self, identifier, acknowledge):
         from .model_manager import ModelManager
@@ -238,6 +246,7 @@ class Workstation:
         if not path.is_file(): return None
         try: receipt=json.loads(path.read_text())
         except (ValueError,OSError): raise WorkstationError('Unreadable process receipt; inspect locally')
+        if receipt.get('launch_in_progress'): return 'launch_unverified'
         if not record_alive(receipt.get('process',{})): return None
         if receipt.get('configuration_sha256')!=self.launch_digest(item): return 'configuration_changed'
         return 'starting'
@@ -256,6 +265,25 @@ class Workstation:
                         folders={k:bool(item and item.get('folders',{}).get(k)) for k in ('models','loras','outputs')}),
                     automatic_downloads=False,stop_supported=False)
 
+    def open_folder(self,kind):
+        with self.lock:
+            item=self.selected()
+            if kind not in ('models','loras','outputs') or not item or kind not in item.get('folders',{}):
+                raise WorkstationError('Folder target is not configured for the selected runtime')
+            path=self.local_path(item['folders'][kind])
+            explorer=Path(os.environ.get('SystemRoot','C:/Windows'))/'explorer.exe'
+            subprocess.Popen([str(explorer),str(path)],shell=False,stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+            return dict(kind=kind,requested=True)
+
+    def open_comfy(self):
+        with self.lock:
+            state=self.status(); item=self.selected()
+            if state['state']!='online' or not item: raise WorkstationError('Selected Comfy is not identity-verified and healthy')
+            url=f"http://127.0.0.1:{item['port']}"
+            if not webbrowser.open(url): raise WorkstationError('Default browser did not accept the request')
+            return dict(requested=True,url=url)
+
     def start(self):
         with self.lock:
             state=self.status()
@@ -267,6 +295,8 @@ class Workstation:
             logs=self.root/'runtime/logs'; logs.mkdir(parents=True,exist_ok=True)
             env={k:v for k,v in os.environ.items() if k.upper() not in ('PYTHONPATH','PYTHONHOME','VIRTUAL_ENV')}
             env.update(PYTHONUTF8='1',PYTHONIOENCODING='utf-8',PYTHONNOUSERSITE='1')
+            atomic_json(self.root/'runtime/state/workstation-comfy.json',dict(launch_in_progress=True,
+                        configuration_sha256=self.launch_digest(item)))
             with (logs/'workstation-comfy.log').open('ab',buffering=0) as output:
                 child=subprocess.Popen([item['executable']]+item['argv'],cwd=item['cwd'],env=env,
                     shell=False,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,
@@ -278,3 +308,96 @@ class Workstation:
             atomic_json(self.root/'runtime/state/workstation-comfy.json',dict(process=record,
                         configuration_sha256=self.launch_digest(item),started_at=time.time()))
             return dict(state='starting',reused=False,log='runtime/logs/workstation-comfy.log')
+
+
+class WorkstationCapabilities(BaseModel):
+    start: bool
+    open_comfy: bool
+    select: bool
+    folders: dict[Literal['models','loras','outputs'],bool]
+
+
+class WorkstationStatus(BaseModel):
+    state: Literal['configuration_required','online','unhealthy','port_conflict','stopped','starting','configuration_changed','launch_unverified']
+    selected_id: str | None
+    label: str | None
+    url: str | None
+    capabilities: WorkstationCapabilities
+    automatic_downloads: bool = False
+    stop_supported: bool = False
+    generation_binding: Literal['not_selected','matches','different','unknown'] = 'unknown'
+
+
+class SelectionRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    candidate_id: str = Field(min_length=1,max_length=80)
+    acknowledge: bool = False
+
+
+class ActionRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+
+
+_GATE=threading.Lock()
+
+def workstation(request:Request):
+    # Same peer + same-origin policy as model manager, tightened against Host rebinding.
+    peer=request.client.host if request.client else None
+    if peer not in ('127.0.0.1','::1','testclient'): raise HTTPException(403,'Only local workstation access is allowed')
+    allowed=('127.0.0.1','localhost','::1')+ (('testserver',) if peer=='testclient' else ())
+    if request.url.hostname not in allowed: raise HTTPException(403,'Non-local Host rejected')
+    origin=request.headers.get('origin')
+    if origin and origin.rstrip('/')!=str(request.base_url).rstrip('/'): raise HTTPException(403,'External origin rejected')
+    with _GATE:
+        if not hasattr(request.app.state,'workstation'):
+            root=Path(os.environ.get('KINJUTSU_ROOT',Path(__file__).resolve().parents[4]))
+            request.app.state.workstation=Workstation(root)
+    return request.app.state.workstation
+
+
+def invoke(method,*args):
+    try: return method(*args)
+    except (WorkstationError,OSError,ValueError) as exc:
+        # Never expose command lines or exception paths to clients.
+        message=str(exc) if isinstance(exc,WorkstationError) else 'Local operation failed; inspect administrator configuration/logs'
+        raise HTTPException(409,message) from exc
+
+
+router=APIRouter(prefix='/workstation',tags=['local workstation'])
+
+@router.get('/status',response_model=WorkstationStatus,summary='Read workstation state and UI action capabilities; never autostarts')
+def status_api(request:Request,w:Workstation=Depends(workstation)):
+    result=invoke(w.status)
+    configured=getattr(getattr(request.app.state,'settings',None),'comfy_url',None)
+    result['generation_binding']=('not_selected' if not result['selected_id'] else
+        ('unknown' if not configured else ('matches' if configured.rstrip('/')==result['url'] else 'different')))
+    return result
+
+@router.get('/discover',summary='Bounded discovery; candidates require local administrator authorization')
+def discover_api(w:Workstation=Depends(workstation)):
+    return invoke(w.discover)
+
+@router.get('/roots',summary='Read candidate roots; presence is not SHA256 verification')
+def roots_api(w:Workstation=Depends(workstation)):
+    result=invoke(w.discover)
+    return dict(roots=result['roots'],configuration_required=not bool(invoke(w.selected)),verification_required=True)
+
+@router.post('/select',summary='Explicitly select a locally approved runtime by opaque candidate ID')
+def select_api(body:SelectionRequest,w:Workstation=Depends(workstation)):
+    return invoke(w.select,body.candidate_id,body.acknowledge)
+
+@router.post('/roots/select',summary='Hash-verify and reuse approved root; no model copying or downloads')
+def select_root_api(body:SelectionRequest,w:Workstation=Depends(workstation)):
+    return invoke(w.select_root,body.candidate_id,body.acknowledge)
+
+@router.post('/comfy/start',summary='Start only fixed approved Comfy command; preserve existing listeners')
+def start_api(body:ActionRequest=Body(default=ActionRequest()),w:Workstation=Depends(workstation)):
+    return invoke(w.start)
+
+@router.post('/comfy/open',summary='Request server-desktop browser for selected verified loopback Comfy')
+def open_api(body:ActionRequest=Body(default=ActionRequest()),w:Workstation=Depends(workstation)):
+    return invoke(w.open_comfy)
+
+@router.post('/folders/{kind}/open',summary='Request Explorer for allowlisted selected-runtime folder')
+def folder_api(kind:Literal['models','loras','outputs'],body:ActionRequest=Body(default=ActionRequest()),w:Workstation=Depends(workstation)):
+    return invoke(w.open_folder,kind)

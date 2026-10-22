@@ -14,7 +14,7 @@ BFS Character Swap Community License1.1 permite descargar, usar, modificar y com
 
 Pesos base se descargan aparte: https://huggingface.co/Comfy-Org/MiniMax-H3
 Modelo original: https://huggingface.co/MiniMaxAI/MiniMax-H3
-Términos copiados en `licenses/MINIMAX-H3-LICENSE.txt`; model card del empaquetado en `licenses/COMFY-MODEL-CARD.md`. Revisar condiciones de uso/comercialización, atribución y restricciones aplicables antes de instalar o publicar resultados. El usuario debe aceptar los términos si la fuente lo requiere; el agente no debe evadir una puerta de autenticación/licencia.
+Términos copiados en `licenses/MINIMAX-H3-LICENSE.txt`; model card del empaquetado en `licenses/COMFY-MODEL-CARD.md`. **La licencia comunitaria excluye EE. UU., Unión Europea, Reino Unido y Corea del Sur; remite a una autorización separada de MiniMax para esos territorios.** Esto también afecta derivados como FastH3 Omni; una licencia Apache/GPL del código no amplía la licencia de los pesos. Revisar condiciones de uso/comercialización, atribución y restricciones aplicables antes de instalar o publicar resultados. El usuario debe aceptar los términos si la fuente lo requiere; el agente no debe evadir una puerta de autenticación/licencia.
 
 El encoder Qwen cuantizado está documentado por el empaquetador como derivado de Qwen3-VL-32B-Instruct-NVFP4. Mantener también los términos de sus fuentes y dependencias; el formato de cuantización no elimina derechos upstream.
 
