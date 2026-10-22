@@ -29,35 +29,37 @@
 
 ## ✦ Qué hace
 
-| | |
-|---|---|
-| 🎭 **Character Swap HD Turbo8** | Cambia la persona de un vídeo guía por la identidad de un retrato, con la receta aprobada y el prompt editable. |
-| 🎞️ **Guía alineada a 24 fps** | Prepara la guía con CPU al tamaño y los frames exactos de la salida; explica salida vs. guía vs. cobertura real del original. |
-| ✍️ **Prompts sin IA** | Plantillas deterministas (Character Swap, Motion y los modos base): ordenan lo que escribes, sin agentes ni tokens. |
-| 📦 **Modelos verificados** | Instala solo lo que falta, tras aceptar licencias; reutiliza pesos existentes por SHA256 sin copiarlos. |
-| 🖥️ **Instalación y motor** | Busca instalaciones de ComfyUI, separa «Iniciar motor» de «Abrir ComfyUI» y abre carpetas en el equipo. Solo local. |
-| 🧭 **Guía interactiva** | Recorrido opcional por todo el flujo, con ayudas en cada control y diseño para escritorio y móvil. |
+<table>
+  <tr><td width="34%">🎭 <b>Character Swap HD Turbo8</b></td><td>Cambia la persona de un vídeo guía por la identidad de un retrato, con la receta aprobada y el prompt editable.</td></tr>
+  <tr><td>🎞️ <b>Guía alineada a 24 fps</b></td><td>Prepara la guía con CPU al tamaño y los frames exactos de la salida; explica salida vs. guía vs. cobertura real del original.</td></tr>
+  <tr><td>✍️ <b>Prompts sin IA</b></td><td>Plantillas deterministas (Character Swap, Motion y los modos base): ordenan lo que escribes, sin agentes ni tokens.</td></tr>
+  <tr><td>📦 <b>Modelos verificados</b></td><td>Instala solo lo que falta, tras aceptar licencias; reutiliza pesos existentes por SHA256 sin copiarlos.</td></tr>
+  <tr><td>🖥️ <b>Instalación y motor</b></td><td>Busca instalaciones de ComfyUI, separa «Iniciar motor» de «Abrir ComfyUI» y abre carpetas en el equipo. Solo local.</td></tr>
+  <tr><td>🧭 <b>Guía interactiva</b></td><td>Recorrido opcional por todo el flujo, con ayudas en cada control y diseño para escritorio y móvil.</td></tr>
+</table>
 
 ## El estudio
 
+<p align="center">
+  <img src="docs/assets/studio-character-swap.png" alt="Compositor con la receta Character Swap HD Turbo8, retrato y guía alineada" width="100%" /><br/>
+  <sub><b>Ruta Character Swap.</b> Pasos de la receta, huecos Identidad y Vídeo guía, sincronía de la guía y prompt editable.</sub>
+</p>
+
 <table>
   <tr>
-    <td width="62%"><img src="docs/assets/studio-character-swap.png" alt="Compositor con la receta Character Swap HD Turbo8, retrato y guía alineada" /></td>
-    <td width="38%"><img src="docs/assets/studio-mobile.png" alt="Studio en móvil" /></td>
-  </tr>
-  <tr>
-    <td><sub><b>Ruta Character Swap.</b> Pasos de la receta, huecos Identidad y Vídeo guía, sincronía de la guía y prompt editable.</sub></td>
-    <td><sub><b>Móvil.</b> Crear, Escenario, Refs y Galería.</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/assets/studio-workstation.png" alt="Panel Instalación, ComfyUI y Carpetas" /></td>
-    <td><img src="docs/assets/studio-models.png" alt="Panel de modelos verificados" /></td>
+    <td width="50%"><img src="docs/assets/studio-workstation.png" alt="Panel Instalación, ComfyUI y Carpetas" /></td>
+    <td width="50%"><img src="docs/assets/studio-models.png" alt="Panel de modelos verificados" /></td>
   </tr>
   <tr>
     <td><sub><b>Instalación · ComfyUI · Carpetas.</b> Estado real del motor, instalaciones detectadas vs. aprobadas.</sub></td>
     <td><sub><b>Modelos.</b> Verificados, reutilizados, faltantes y descargas con licencia.</sub></td>
   </tr>
 </table>
+
+<p align="center">
+  <img src="docs/assets/studio-mobile.png" alt="Studio en móvil" width="300" /><br/>
+  <sub><b>Móvil.</b> Crear, Escenario, Refs y Galería, con la misma ruta guiada.</sub>
+</p>
 
 <sub>Capturas con datos de demostración: no contienen personas, rutas ni archivos reales.</sub>
 
