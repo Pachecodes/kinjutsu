@@ -81,7 +81,8 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
   const trtMethod = state.method === 'w4a8_lightx2v_trt'
   const premiumMethod = state.method === 'w4a8_latent2x_refine3'
   const vsaMethod = state.method === 'ref2va_vsa'
-  const recipeLocked = w4a8Method || vsaMethod
+  const omniMethod = state.method === 'fast_h3_omni_8step'
+  const recipeLocked = w4a8Method || vsaMethod || omniMethod
   const checkpointFamily = referenceMode ? 'ref2va' : 'fl2va'
   const selectedLoras = new Set(state.lora_chain.map((lora) => lora.name))
 
@@ -97,7 +98,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
         help={HELP.checkpoint}
         defaultOpen
         note={
-          vsaMethod
+          omniMethod ? 'FastH3 Omni INT8 · escenas Ref2VA · sin LoRAs extra. Carril independiente 8237; no es el checkpoint OG ni FastH3 V2.' : vsaMethod
             ? 'Ref2VA Turbo4 + compuerta VSA 75 %. Frames, checkpoint, codificador, LoRAs y continuidad siguen editables.'
             : referenceMode
               ? 'Solo el checkpoint Ref2VA tiene versión GGUF.'
@@ -117,14 +118,14 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
           options={[
             {
               value: 'int8',
-              label: `Default / OG · ${referenceMode ? 'Ref2VA' : 'FL2VA'}`,
-              disabled: w4a8Method || !capabilities.weights.int8,
+              label: omniMethod ? 'FastH3 Omni INT8' : `Default / OG · ${referenceMode ? 'Ref2VA' : 'FL2VA'}`,
+              disabled: omniMethod || w4a8Method || !capabilities.weights.int8,
               tooltip: capabilities.weights.int8 ? 'Checkpoint INT8 podado.' : 'El checkpoint INT8 no está instalado.',
             },
             {
               value: 'gguf_q3km',
               label: 'GGUF Q3_K_M',
-              disabled: w4a8Method || !referenceMode || !capabilities.weights.gguf_q3km,
+              disabled: omniMethod || w4a8Method || !referenceMode || !capabilities.weights.gguf_q3km,
               tooltip: !referenceMode
                 ? 'No existe versión GGUF del checkpoint FL2VA.'
                 : capabilities.weights.gguf_q3km
@@ -134,7 +135,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
             {
               value: 'erosmax_beta5',
               label: '10Eros-Max · ErosMax Beta 5',
-              disabled: w4a8Method || !capabilities.weights.erosmax_beta5,
+              disabled: omniMethod || w4a8Method || !capabilities.weights.erosmax_beta5,
               tooltip: capabilities.weights.erosmax_beta5
                 ? 'TenStrip/10Eros-Max Beta 5 · híbrido W4A8/INT8 Turbo verificado. UNETLoader nativo. El tamaño no garantiza la VRAM.'
                 : 'h3ErosMax_beta5.safetensors no está instalado en H3 Lab.',
@@ -142,18 +143,18 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
           ]}
         />
         <p className="text-[11px] leading-snug text-faint">
-          {!capabilities.comfy_online
+          {omniMethod ? 'La disponibilidad de Omni se comprueba en su propio método; los pesos OG instalados no lo habilitan.' : !capabilities.comfy_online
             ? 'Disponibilidad de checkpoints desconocida · H3 Lab desconectado.'
             : capabilities.weights.erosmax_beta5
               ? '10Eros-Max · instalado en el UNETLoader en vivo.'
               : '10Eros-Max · no está en el UNETLoader en vivo.'}
         </p>
         <p className="rounded-xl border border-accent/40 bg-accent/10 px-2.5 py-2 text-xs font-semibold text-fg">
-          {`Checkpoint elegido: ${checkpointLabel(state.weights, referenceMode)}`}
+          {`Checkpoint elegido: ${omniMethod ? 'FastH3 Omni INT8' : checkpointLabel(state.weights, referenceMode)}`}
         </p>
         {recipeLocked ? (
           <p className="text-[11px] leading-snug text-accent">
-            {vsaMethod
+            {omniMethod ? 'Núcleo fijo: Euler/simple · 8 pasos · guidance 1 · shifts vídeo/audio 12/3 · INT8 · Standard · sin LoRAs ni continuidad automática.' : vsaMethod
               ? 'Núcleo activo: Ref2VA Turbo4 a 1.0 · VSA 0,75 · sigma shifts 12/3 · euler/simple · 4 pasos. El resto sigue editable.'
               : premiumMethod
                 ? 'Receta activa: W4A8 FL2VA · LightX2V4 0,75 · latente 3D 2× · euler Refine3 · 124 frames.'
@@ -173,13 +174,13 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
             {
               value: 'standard',
               label: 'Standard',
-              disabled: !capabilities.encoders.standard,
+              disabled: omniMethod || !capabilities.encoders.standard,
               tooltip: 'Condicionador Qwen3-VL oficial de H3.',
             },
             {
               value: 'heretic',
               label: 'Heretic',
-              disabled: !capabilities.encoders.heretic,
+              disabled: omniMethod || !capabilities.encoders.heretic,
               tooltip: capabilities.encoders.heretic
                 ? 'Condicionador Qwen experimental. Cambia el condicionamiento del prompt, no los pesos de vídeo.'
                 : 'El condicionador Heretic NVFP4 no está instalado.',
@@ -197,13 +198,13 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
         title={`LoRAs${state.lora_chain.length ? ` · ${state.lora_chain.length}` : ''}`}
         help={HELP.loras}
         defaultOpen={state.lora_chain.length > 0}
-        note="Adaptadores opcionales. Se aplican en el orden de la lista, antes del método."
+        note={omniMethod ? 'Omni no admite LoRAs extra. Character Swap HD Turbo8 conserva su receta separada.' : 'Adaptadores opcionales. Se aplican en el orden de la lista, antes del método.'}
       >
         {capabilities.loras.length ? (
           <div className="space-y-3">
             <div className="flex items-end gap-2">
               <Field label="Añadir LoRA" htmlFor="lora-select" className="min-w-0 flex-1">
-                <Select value={loraToAdd || undefined} onValueChange={setLoraToAdd}>
+                <Select value={loraToAdd || undefined} disabled={omniMethod} onValueChange={setLoraToAdd}>
                   <SelectTrigger id="lora-select">
                     <SelectValue placeholder="Elige un LoRA instalado" />
                   </SelectTrigger>
@@ -228,7 +229,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
                 variant="outline"
                 size="icon"
                 aria-label="Añadir el LoRA elegido"
-                disabled={!loraToAdd || state.lora_chain.length >= 8}
+                disabled={omniMethod || !loraToAdd || state.lora_chain.length >= 8}
                 onClick={() => {
                   const lora = capabilities.loras.find((entry) => entry.name === loraToAdd)
                   if (!lora || (lora.checkpoint !== 'any' && lora.checkpoint !== checkpointFamily)) return
@@ -367,6 +368,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
         >
           <Input
             id="custom-sigmas"
+            disabled={omniMethod}
             key={String(state.custom_sigmas)}
             defaultValue={state.custom_sigmas?.join(', ') ?? ''}
             onBlur={(event) => {
@@ -499,6 +501,7 @@ export function SettingsPanel({ capabilities }: { capabilities: CapabilityRespon
           </span>
           <Switch
             checked={state.continuity.auto_split}
+            disabled={omniMethod}
             onCheckedChange={(auto_split) => state.setContinuity({ auto_split })}
             aria-label="Continuidad automática"
           />

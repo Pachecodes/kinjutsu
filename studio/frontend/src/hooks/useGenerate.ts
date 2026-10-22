@@ -21,11 +21,14 @@ export function generateGate(
   issues: Issue[],
 ): GenerateGate {
   if (!request.prompt.trim()) return { blockedReason: 'Escribe un prompt primero.' }
-  if (capabilities && !capabilities.comfy_online) {
+  const omni = request.method === 'fast_h3_omni_8step'
+  if (omni && request.mode !== 'ref2va') return { blockedReason: 'Omni solo admite escenas en Referencias (Ref2VA).' }
+  if (omni && !capabilities?.methods.some((entry) => entry.id === request.method)) return { blockedReason: 'Omni aún no tiene disponibilidad confirmada. Revisa Instalar o configurar Omni.' }
+  if (!omni && capabilities && !capabilities.comfy_online) {
     return { blockedReason: `H3 Lab (ComfyUI en ${capabilities.comfy_url}) no responde. Puedes seguir preparando la toma.` }
   }
   const mode = capabilities?.modes.find((entry) => entry.id === request.mode)
-  if (mode && !mode.available) {
+  if (!omni && mode && !mode.available) {
     return { blockedReason: mode.unavailable_reason ?? 'Esta tarea no está disponible ahora mismo.' }
   }
   const method = capabilities?.methods.find((entry) => entry.id === request.method)

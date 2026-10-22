@@ -72,6 +72,20 @@ CHARACTER_SWAP_HD_PROMPT = (
 
 PRESETS: list[dict[str, Any]] = [
     _preset(
+        preset_id="fasth3-omni-scenes",
+        label="FastH3 Omni · Escenas",
+        blurb="Crea una escena nueva desde identidad, objetos o ambiente de referencia. No es Character Swap.",
+        suggests_mode=Mode.ref2va,
+        patch={"width":512, "height":640, "length":124, "steps":8,
+               "method":"fast_h3_omni_8step", "weights":"int8", "encoder":"standard",
+               "sampler_name":"euler", "scheduler":"simple", "custom_sigmas":None,
+               "ref_image_size":"max", "lora_chain":[],
+               "continuity":{"auto_split":False,"window":"auto","pin_frames":"22"}},
+        recipe=["Omni INT8 oficial · Standard · sin LoRAs", "Euler/simple8 · BasicGuider 1 · sigma shift 12/3 antes del guider y scheduler", "References normales: imagen, video y audio; mínimo una imagen o video", "Backend independiente Omni :8237 con soporte PDD nativo"],
+        caveats=["Solo se midió una imagen y un clip corto de 124 frames a 512×640. No hay garantía universal de dos minutos.", "Video/audio y referencias múltiples requieren QA propia; el costo depende del tamaño y número de referencias.", "No admite Aligned guide, Performance, frames, mezcla de métodos ni continuidad automática. Character Swap estándar no cambia."],
+        needs=["1 imagen o video de referencia normal", "Backend Omni independiente con checkpoint oficial"],
+    ),
+    _preset(
         preset_id="character-swap-playground",
         label="Character Swap · Experimentar",
         blurb="Template libre: carga LoRAs + prompt. Video como referencia normal, sin exigir guía prealineada.",

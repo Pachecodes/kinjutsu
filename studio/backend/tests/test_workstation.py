@@ -287,6 +287,188 @@ def test_probe_read_timeout_is_bounded(tmp_path,comfy_server):
     assert time.monotonic()-start < 1.5
 
 
+def test_omni_start_is_explicit_fixed_and_receipt_scoped(tmp_path,monkeypatch):
+    import importlib.util
+    import app.services.workstation as module
+    root=Path(__file__).resolve().parents[3]
+    spec=importlib.util.spec_from_file_location('profile_fixture',root/'scripts/kinjutsu.py')
+    k=importlib.util.module_from_spec(spec);spec.loader.exec_module(k)
+    service=k.omni_service(tmp_path);core=service['cwd'];core.mkdir(parents=True)
+    (core/'main.py').write_text('# fixture');(core/'folder_paths.py').write_text('# fixture');(core/'comfy').mkdir()
+    py=Path(service['cmd'][0]);py.parent.mkdir(parents=True);py.write_text('fixture')
+    private=tmp_path/'runtime/fasth3-omni'
+    (tmp_path/'dependencies').mkdir();(tmp_path/'dependencies/fasth3-omni.lock').write_text('fixture')
+    (private/'installed.json').write_text(json.dumps(dict(root=str(tmp_path),verified=True,lock_sha256=k.omni_fingerprint(tmp_path))))
+    k.register_omni_workstation(tmp_path)
+    w=module.Workstation(tmp_path,standard_roots=[])
+    assert w.status()['state']=='configuration_required'  # install is NOT select/start
+    assert w.status(profile='fasth3-omni')['state']=='stopped'
+    calls=[];preflight=[]
+    monkeypatch.setattr(w,'port_free',lambda port:True)
+    monkeypatch.setattr(w,'omni_preflight',lambda:preflight.append(True))
+    class Child:
+        pid=321
+        def poll(self): return None
+    monkeypatch.setattr(module.subprocess,'Popen',lambda *a,**kw:calls.append((a,kw)) or Child())
+    item=w.selected(profile='fasth3-omni')
+    owner=dict(pid=321,create_time=1,exe=item['executable'],cmdline=[item['executable']]+item['argv'],cwd=item['cwd'])
+    monkeypatch.setattr(module,'process_record',lambda pid:owner)
+    monkeypatch.setattr(module,'record_alive',lambda record:record==owner)
+    monkeypatch.setenv('H3_COMFY_URL','http://foreign')
+    assert w.start(profile='fasth3-omni')['state']=='starting'
+    assert w.start(profile='fasth3-omni')['reused'] is True
+    assert len(calls)==1 and len(preflight)==1
+    assert calls[0][0][0]==service['cmd']
+    assert 'H3_COMFY_URL' not in calls[0][1]['env']
+    assert (tmp_path/'runtime/state/workstation-fasth3-omni.json').is_file()
+    assert not (tmp_path/'runtime/state/workstation-comfy.json').exists()
+    # Windows venv launcher remains owned, but its listening child uses base Python.
+    listener=dict(owner,pid=322,exe='C:/Python312/python.exe',cmdline=['C:/Python312/python.exe']+item['argv'])
+    monkeypatch.setattr(w,'listeners',lambda:{8237:listener})
+    monkeypatch.setattr(w,'owned_descendants',lambda record:[listener] if record==owner else [])
+    monkeypatch.setattr(w,'probe',lambda port:True)
+    assert w.status(profile='fasth3-omni')['state']=='online'
+    listener['create_time']=999  # receipt/lineage must match full identity, not PID/port
+    monkeypatch.setattr(w,'owned_descendants',lambda record:[])
+    assert w.status(profile='fasth3-omni')['state']=='port_conflict'
+    cfg=json.loads((tmp_path/'runtime/workstation.json').read_text())
+    cfg['runtimes'][0]['argv'].append('--highvram')
+    (tmp_path/'runtime/workstation.json').write_text(json.dumps(cfg))
+    with pytest.raises(module.WorkstationError,match='fixed'): w.approved()
+
+
+@pytest.fixture
+def omni_failure_station(tmp_path,monkeypatch):
+    import app.services.workstation as module
+    w,item=selected_station(tmp_path,monkeypatch)
+    item.update(key='fasth3-omni',port=8237,id='omni-fixture')
+    monkeypatch.setattr(w,'selected',lambda profile=None:item)
+    monkeypatch.setattr(w,'port_free',lambda port:True)
+    monkeypatch.setattr(w,'omni_preflight',lambda:None)
+    return w,item,module
+
+
+def test_omni_spawn_failure_rolls_back_only_own_claim(omni_failure_station,monkeypatch):
+    w,item,module=omni_failure_station
+    claims=[]
+    def fail(*args,**kwargs):
+        claims.append(json.loads(w.receipt_path(item).read_text()))
+        raise OSError('simulated spawn failure')
+    monkeypatch.setattr(module.subprocess,'Popen',fail)
+    for _ in range(2):
+        with pytest.raises((OSError,module.WorkstationError),match='spawn'):
+            w.start(profile='fasth3-omni')
+        assert not w.receipt_path(item).exists()
+        assert w.status(profile='fasth3-omni')['state']=='stopped'
+    assert claims[0]['root']==str(w.root)
+    assert claims[0]['profile']=='fasth3-omni'
+    assert claims[0]['configuration_sha256']==w.launch_digest(item)
+    assert claims[0]['claim_id']!=claims[1]['claim_id']
+    installer=module.profile_installer()
+    monkeypatch.setattr(installer,'terminate_record',lambda record:pytest.fail('foreign process killed'))
+    installer.stop_omni(w.root)
+    monkeypatch.setattr(w,'listeners',lambda:{8237:dict(pid=999,cmdline=['foreign'])})
+    assert w.status(profile='fasth3-omni')['state']=='port_conflict'
+    with pytest.raises(module.WorkstationError,match='port_conflict'): w.start(profile='fasth3-omni')
+
+
+@pytest.mark.parametrize('death_at',[0,1])
+def test_omni_dead_spawn_is_not_starting_and_can_retry(omni_failure_station,monkeypatch,death_at):
+    w,item,module=omni_failure_station
+    class Child:
+        pid=123
+        polls=0
+        def poll(self):
+            self.polls+=1
+            return 1 if self.polls>death_at else None
+    monkeypatch.setattr(module.subprocess,'Popen',lambda *a,**kw:Child())
+    owner=dict(pid=123,create_time=42,exe=item['executable'],cmdline=[item['executable']]+item['argv'],cwd=item['cwd'])
+    monkeypatch.setattr(module,'process_record',lambda pid:owner)
+    monkeypatch.setattr(module,'record_alive',lambda record:False)
+    for _ in range(2):
+        with pytest.raises(module.WorkstationError,match='exited.*log'):
+            w.start(profile='fasth3-omni')
+        assert not w.receipt_path(item).exists()
+        assert w.status(profile='fasth3-omni')['state']=='stopped'
+
+
+def test_omni_failed_recording_recovers_when_created_child_dies(omni_failure_station,monkeypatch):
+    w,item,module=omni_failure_station
+    class Child:
+        pid=123
+        exitcode=None
+        def poll(self): return self.exitcode
+        def terminate(self): raise OSError('simulated handle access failure')
+    child=Child();calls=[]
+    monkeypatch.setattr(module.subprocess,'Popen',lambda *a,**kw:calls.append(True) or child)
+    def unavailable(pid): raise OSError('identity unavailable')
+    monkeypatch.setattr(module,'process_record',unavailable)
+    with pytest.raises(module.WorkstationError,match='log'): w.start(profile='fasth3-omni')
+    assert w.status(profile='fasth3-omni')['state']=='launch_unverified'
+    installer=module.profile_installer()
+    monkeypatch.setattr(installer,'is_owned',lambda r:False)
+    monkeypatch.setattr(installer,'terminate_record',lambda r:pytest.fail('unverified/foreign kill'))
+    installer.stop_omni(w.root)  # own pending metadata must not be rejected
+    with pytest.raises(module.WorkstationError): w.start(profile='fasth3-omni')
+    assert len(calls)==1
+    child.exitcode=1
+    assert w.status(profile='fasth3-omni')['state']=='stopped'
+    assert not w.receipt_path(item).exists()
+    with pytest.raises(module.WorkstationError): w.start(profile='fasth3-omni')
+    assert len(calls)==2
+
+
+def test_omni_spawn_rollback_preserves_replaced_claim(omni_failure_station,monkeypatch):
+    w,item,module=omni_failure_station
+    replacement=dict(root=str(w.root),profile='fasth3-omni',claim_id='another-caller',
+                     configuration_sha256=w.launch_digest(item),launch_in_progress=True)
+    def fail(*args,**kwargs):
+        module.atomic_json(w.receipt_path(item),replacement)
+        raise OSError('spawn failed')
+    monkeypatch.setattr(module.subprocess,'Popen',fail)
+    with pytest.raises(module.WorkstationError): w.start(profile='fasth3-omni')
+    assert json.loads(w.receipt_path(item).read_text())==replacement
+
+
+def test_omni_identity_failure_rolls_back_created_child_handle(omni_failure_station,monkeypatch):
+    w,item,module=omni_failure_station
+    calls=[]
+    class Child:
+        pid=123
+        exitcode=None
+        def poll(self): return self.exitcode
+        def terminate(self):
+            calls.append('terminate-own-handle')
+            self.exitcode=1
+        def wait(self,timeout):
+            calls.append('wait-own-handle')
+            return self.exitcode
+    monkeypatch.setattr(module.subprocess,'Popen',lambda *a,**kw:Child())
+    def unavailable(pid): raise OSError('identity unavailable')
+    monkeypatch.setattr(module,'process_record',unavailable)
+    for _ in range(2):
+        with pytest.raises(module.WorkstationError,match='log'): w.start(profile='fasth3-omni')
+        assert not w.receipt_path(item).exists()
+        assert w.status(profile='fasth3-omni')['state']=='stopped'
+    assert calls==['terminate-own-handle','wait-own-handle']*2
+
+
+def test_optional_profile_api_never_installs_or_downloads(tmp_path):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.services.workstation import Workstation,router
+    app=FastAPI();app.include_router(router,prefix='/api')
+    app.state.workstation=Workstation(tmp_path,standard_roots=[])
+    client=TestClient(app)
+    url='/api/workstation/profiles/fasth3-omni'
+    assert client.get(url+'/status').json()['state']=='configuration_required'
+    assert client.get(url+'/status').json()['automatic_downloads'] is False
+    assert client.post(url+'/start',json={}).status_code==409
+    assert not (tmp_path/'runtime').exists()
+    assert client.post(url+'/start',json={'command':'evil'}).status_code==422
+    assert client.get('/api/workstation/profiles/not-approved/status').status_code==422
+
+
 def configured(tmp_path, *, port=8188):
     core=tmp_path/'existing-comfy'; core.mkdir()
     (core/'main.py').write_text('# fixture')

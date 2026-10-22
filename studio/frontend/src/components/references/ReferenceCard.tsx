@@ -75,7 +75,8 @@ export function ReferenceCard({
   const removeReference = useComposer((state) => state.removeReference)
   const reorderReference = useComposer((state) => state.reorderReference)
 
-  const roles = rolesFor(mode, slot.asset.kind)
+  const omni = useComposer((state) => state.method === 'fast_h3_omni_8step')
+  const roles = rolesFor(mode, slot.asset.kind).filter((role) => !omni || role !== 'aligned_guide')
   const warning = durationWarning(slot)
   const duration = slot.asset.duration_seconds
 
@@ -196,7 +197,7 @@ export function ReferenceCard({
           ) : null}
         </div>
 
-        {slot.asset.kind === 'video' && mode === 'ref2va' && alignedGuides ? <PrepareGuide slot={slot} /> : null}
+        {slot.asset.kind === 'video' && mode === 'ref2va' && alignedGuides && !omni ? <PrepareGuide slot={slot} /> : null}
 
         {warning ? (
           <p className="flex items-start gap-1 text-[10px] leading-snug text-warn">

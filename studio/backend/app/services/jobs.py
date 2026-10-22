@@ -120,12 +120,14 @@ class JobService:
         capabilities: CapabilityService,
         outputs_dir: Path,
         experimental_comfy: ComfyClientProtocol | None = None,
+        omni_comfy: ComfyClientProtocol | None = None,
         poll_interval: float = 1.0,
         comfy_subfolder: str = "h3studio",
     ) -> None:
         self.db = db
         self.comfy = comfy
         self.experimental_comfy = experimental_comfy or comfy
+        self.omni_comfy = omni_comfy
         self.assets = assets
         self.capabilities = capabilities
         self.outputs_dir = outputs_dir.resolve()
@@ -138,12 +140,18 @@ class JobService:
         self._preview: dict[str, Any] | None = None
         self._stopping = False
         self._checkpoint_lock = asyncio.Lock()
-        self._submitted_checkpoints: dict[str, str | None] = {"stable": None, "experimental": None}
+        self._submitted_checkpoints: dict[str, str | None] = {"stable": None, "experimental": None, "omni": None}
 
     def _backend_for_method(self, method: MethodId) -> str:
+        if method is MethodId.fast_h3_omni_8step:
+            return "omni"
         return "experimental" if method in {MethodId.fast_h3_v2_8step, MethodId.taomate_3step} else "stable"
 
     def _client_for_method(self, method: MethodId) -> ComfyClientProtocol:
+        if method is MethodId.fast_h3_omni_8step:
+            if self.omni_comfy is None:
+                raise ComfyError("Backend Omni independiente no configurado.")
+            return self.omni_comfy
         return self.experimental_comfy if self._backend_for_method(method) == "experimental" else self.comfy
 
     def _client_for_row(self, row: dict[str, Any]) -> ComfyClientProtocol:
@@ -216,7 +224,8 @@ class JobService:
                 try:
                     comfy_name = await self._mirror_asset(record, client or self.comfy)
                 except ComfyError:
-                    comfy_name = record.get("comfy_name") or ""
+                    # A normal-backend name is never proof of an Omni upload.
+                    comfy_name = "" if request.method is MethodId.fast_h3_omni_8step else record.get("comfy_name") or ""
                 record = {**record, "comfy_name": comfy_name}
             resolved[asset_id] = _asset_to_resolved(record)
         return resolved
@@ -241,14 +250,14 @@ class JobService:
                 issues.append(Issue(code="checkpoint_missing", message="10Eros-Max Beta 5 is missing from the live UNETLoader. No fallback.", field="weights"))
         if request.custom_sigmas is not None and not capabilities.manual_sigmas:
             issues.append(Issue(code="manual_sigmas_unavailable", message="Live ManualSigmas node is unavailable.", field="custom_sigmas"))
-        if capabilities.comfy_online and request.sampler_name not in capabilities.samplers:
+        if request.method is not MethodId.fast_h3_omni_8step and capabilities.comfy_online and request.sampler_name not in capabilities.samplers:
             issues.append(Issue(code="sampler_unavailable", message="Selected sampler is unavailable in the live runtime.", field="sampler_name"))
         return normalized, issues
 
     # -- creation ----------------------------------------------------------
     async def create(self, request: GenerationRequest) -> JobOut:
         capabilities = await self.capabilities.get()
-        if not capabilities.comfy_online:
+        if request.method is not MethodId.fast_h3_omni_8step and not capabilities.comfy_online:
             # Say the real reason instead of cascading into "every method is
             # unavailable", which is technically true and completely unhelpful.
             raise JobRejected(
@@ -280,7 +289,7 @@ class JobService:
                 )
 
         mode_info = next((m for m in capabilities.modes if m.id == normalized.mode), None)
-        if mode_info is not None and not mode_info.available:
+        if normalized.method is not MethodId.fast_h3_omni_8step and mode_info is not None and not mode_info.available:
             raise JobRejected(
                 [
                     Issue(

@@ -5,7 +5,8 @@ $root = Resolve-KinjutsuRoot $InstallRoot
 if ($DryRun) {
     # Offline; does not bootstrap tools, create files, or resolve network packages.
     $manifest = Get-Content -LiteralPath (Join-Path $root 'models/manifest.json') -Raw | ConvertFrom-Json
-    [ordered]@{Title='Pachecodes : Kinjutsu';Root=$root;Python='3.12.10';CoreRevision='7a131a3afadc8200120f67f9236311a2c48b7445';Comfy='127.0.0.1:8218';Studio='127.0.0.1:8220';Models=$manifest.models;Lock='dependencies/requirements.lock';AutoStart=$false;Actions='Verify package; bootstrap portable uv/git + FFmpeg/ffprobe pair; isolated venv; pinned hash dependencies; exact core + backports; verified weights; prebuilt sanitized frontend; verify only, no services'} | ConvertTo-Json -Depth 8
+    $defaultModels = @($manifest.models | Where-Object { -not ($_.PSObject.Properties.Name -contains 'optional') -or -not $_.optional })
+    [ordered]@{Title='Pachecodes : Kinjutsu';Root=$root;Python='3.12.10';CoreRevision='7a131a3afadc8200120f67f9236311a2c48b7445';Comfy='127.0.0.1:8218';Studio='127.0.0.1:8220';Models=$defaultModels;Lock='dependencies/requirements.lock';AutoStart=$false;Actions='Verify package; bootstrap portable uv/git + FFmpeg/ffprobe pair; isolated venv; pinned hash dependencies; exact core + backports; verified weights; prebuilt sanitized frontend; verify only, no services'} | ConvertTo-Json -Depth 8
     exit 0
 }
 if (-not $AcceptLicenses) {

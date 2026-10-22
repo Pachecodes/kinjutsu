@@ -40,6 +40,15 @@ def atomic_json(path, data):
     temporary.replace(path)
 
 
+def profile_installer():
+    """Load only the packaged fixed lifecycle module, never a client-supplied path."""
+    import importlib.util
+    path=Path(__file__).resolve().parents[4]/'scripts/kinjutsu.py'
+    spec=importlib.util.spec_from_file_location('kinjutsu_optional_runtime',path)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    return module
+
+
 class Workstation:
     def __init__(self, root: Path, *, standard_roots=None):
         self.root = root.resolve()
@@ -97,6 +106,11 @@ class Workstation:
                     if tail.count(flag)!=1 or any(a.startswith(flag+'=') for a in tail) or tail.index(flag)+1>=len(tail) or tail[tail.index(flag)+1]!=value:
                         raise WorkstationError('Startup must bind the exact configured IPv4 loopback port')
                 if '--auto-launch' in tail: raise WorkstationError('Browser launch must be explicit')
+                if item.get('key')=='fasth3-omni':
+                    fixed=profile_installer().omni_service(self.root)
+                    if (core!=fixed['cwd'] or str(executable)!=fixed['cmd'][0] or
+                            argv!=fixed['cmd'][1:] or port!=8237):
+                        raise WorkstationError('Omni requires the fixed isolated native PDD runtime command')
                 roots=[str(self.local_path(p)) for p in item.get('model_roots',[])]
                 if len(roots)>32: raise WorkstationError('Too many model roots')
                 folders=item.get('folders',{})
@@ -153,7 +167,11 @@ class Workstation:
                 configuration_required=not i.get('approved',False)) for i in list(candidates.values())[:128]],roots=list(roots.values())[:128],
                 limits=dict(max_roots=64,max_depth=0,max_results=128,budget_seconds=2),automatic_downloads=False)
 
-    def selected(self):
+    def selected(self, profile=None):
+        if profile is not None:
+            if profile!='fasth3-omni': raise WorkstationError('Unknown runtime profile')
+            matches=[i for i in self.approved().values() if i.get('key')==profile and i.get('approved') is True]
+            return matches[0] if len(matches)==1 else None
         path=self.root/'runtime/workstation-selection.json'
         selection=json.loads(path.read_text()) if path.is_file() else {}
         identifier=selection.get('selected_id')
@@ -241,23 +259,69 @@ class Workstation:
     def launch_digest(self,item):
         return hashlib.sha256(json.dumps(item,sort_keys=True).encode()).hexdigest()
 
+    def receipt_path(self,item):
+        name='workstation-fasth3-omni.json' if item.get('key')=='fasth3-omni' else 'workstation-comfy.json'
+        return self.root/'runtime/state'/name
+
+    @staticmethod
+    def owned_descendants(record):
+        import psutil
+        if not record_alive(record): return []
+        try:
+            children=[process_record(p.pid) for p in psutil.Process(record['pid']).children(recursive=True)]
+            return children if record_alive(record) else []
+        except (psutil.Error,OSError,KeyError): return []
+
+    def listener_owned(self,item,owner):
+        if item.get('key')!='fasth3-omni': return self.identity_matches(item,owner)
+        try:
+            receipt=json.loads(self.receipt_path(item).read_text(encoding='utf-8'))
+            parent=receipt['process']
+            if (receipt.get('root')!=str(self.root) or receipt.get('profile')!='fasth3-omni' or
+                    receipt.get('configuration_sha256')!=self.launch_digest(item) or
+                    not self.identity_matches(item,parent) or not record_alive(parent)):
+                return False
+            # A Windows venv child has base-python.exe and a rewritten argv[0].
+            # Trust only a full identity obtained through our still-verified launcher.
+            candidates=[parent]+self.owned_descendants(parent)
+            return (owner in candidates and owner.get('cmdline',[])[1:]==item['argv'] and
+                    Path(owner.get('cwd','')).resolve()==Path(item['cwd']))
+        except (OSError,ValueError,KeyError,TypeError): return False
+
+    def omni_preflight(self):
+        installer=profile_installer()
+        receipt=self.root/'runtime/fasth3-omni/installed.json'
+        try:
+            data=json.loads(receipt.read_text(encoding='utf-8'))
+            if (data.get('root')!=str(self.root) or data.get('verified') is not True or
+                    data.get('lock_sha256')!=installer.omni_fingerprint(self.root)):
+                raise ValueError('stale receipt')
+            installer.verify_omni_runtime(self.root)
+        except (OSError,ValueError,RuntimeError,subprocess.CalledProcessError) as exc:
+            raise WorkstationError('Omni preflight failed; explicitly install profile/models or inspect local runtime') from exc
+
     def pending(self,item):
-        path=self.root/'runtime/state/workstation-comfy.json'
+        path=self.receipt_path(item)
         if not path.is_file(): return None
         try: receipt=json.loads(path.read_text())
         except (ValueError,OSError): raise WorkstationError('Unreadable process receipt; inspect locally')
-        if receipt.get('launch_in_progress'): return 'launch_unverified'
+        if receipt.get('launch_in_progress'):
+            launch=getattr(self,'_omni_launch',None) if item.get('key')=='fasth3-omni' else None
+            if launch and receipt==launch[0] and launch[1].poll() is not None:
+                self.clear_omni_claim(item,launch[0])
+                return None
+            return 'launch_unverified'
         if not record_alive(receipt.get('process',{})): return None
         if receipt.get('configuration_sha256')!=self.launch_digest(item): return 'configuration_changed'
         return 'starting'
 
-    def status(self):
-        item=self.selected()
+    def status(self, profile=None):
+        item=self.selected(profile=profile)
         state='configuration_required'
         if item:
             owners=self.listeners(); owner=owners.get(item['port'])
             if owner is not None or not self.port_free(item['port']):
-                state=('online' if self.probe(item['port']) else 'unhealthy') if self.identity_matches(item,owner or {}) else 'port_conflict'
+                state=('online' if self.probe(item['port']) else 'unhealthy') if self.listener_owned(item,owner or {}) else 'port_conflict'
             else: state=self.pending(item) or 'stopped'
         return dict(state=state,selected_id=item['id'] if item else None,label=item.get('label') if item else None,
                     url=f"http://127.0.0.1:{item['port']}" if item else None,
@@ -284,20 +348,64 @@ class Workstation:
             if not webbrowser.open(url): raise WorkstationError('Default browser did not accept the request')
             return dict(requested=True,url=url)
 
-    def start(self):
+    def clear_omni_claim(self,item,claim):
+        path=self.receipt_path(item)
+        try:
+            current=json.loads(path.read_text(encoding='utf-8'))
+            if all(current.get(k)==claim.get(k) for k in ('claim_id','root','profile','configuration_sha256')):
+                path.unlink()
+        except FileNotFoundError: pass
+
+    def _start_omni(self,item,env,logs):
+        import uuid
+        claim=dict(launch_in_progress=True,claim_id=uuid.uuid4().hex,
+                   root=str(self.root),profile='fasth3-omni',configuration_sha256=self.launch_digest(item))
+        atomic_json(self.receipt_path(item),claim)
+        child=None
+        log='workstation-fasth3-omni.log'
+        try:
+            with (logs/log).open('ab',buffering=0) as output:
+                child=subprocess.Popen([item['executable']]+item['argv'],cwd=item['cwd'],env=env,
+                    shell=False,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,
+                    creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+            self._omni_launch=(claim,child)
+            if child.poll() is not None:
+                raise WorkstationError('Omni spawn exited; inspect runtime/logs/'+log+' and retry')
+            record=process_record(child.pid)
+            if child.poll() is not None:
+                raise WorkstationError('Omni spawn exited; inspect runtime/logs/'+log+' and retry')
+            atomic_json(self.receipt_path(item),dict(claim,launch_in_progress=False,process=record,started_at=time.time()))
+        except Exception as exc:
+            # The retained Popen handle belongs only to this call (on Windows it
+            # remains safe even if the numeric PID is reused). Never kill by port.
+            if child is not None and child.poll() is None:
+                try:
+                    child.terminate()
+                    child.wait(timeout=5)
+                except (OSError,subprocess.TimeoutExpired): pass
+            if child is None or child.poll() is not None:
+                self.clear_omni_claim(item,claim)
+            if isinstance(exc,WorkstationError): raise
+            raise WorkstationError('Omni spawn/identity recording failed; inspect runtime/logs/'+log+' and profile status before retry') from exc
+        return dict(state='starting',reused=False,log='runtime/logs/'+log)
+
+    def start(self, profile=None):
         with self.lock:
-            state=self.status()
+            state=self.status(profile=profile)
             if state['state']=='online': return dict(state='online',reused=True)
             if state['state']=='starting': return dict(state='starting',reused=True)
             if state['state']!='stopped': raise WorkstationError('Runtime not safe to start: '+state['state'])
-            item=self.selected()
+            item=self.selected(profile=profile)
             if not item or not self.port_free(item['port']): raise WorkstationError('Port is occupied; no process was changed')
+            if item.get('key')=='fasth3-omni': self.omni_preflight()
             logs=self.root/'runtime/logs'; logs.mkdir(parents=True,exist_ok=True)
-            env={k:v for k,v in os.environ.items() if k.upper() not in ('PYTHONPATH','PYTHONHOME','VIRTUAL_ENV')}
+            env={k:v for k,v in os.environ.items() if k.upper() not in ('PYTHONPATH','PYTHONHOME','VIRTUAL_ENV') and not k.upper().startswith('H3_')}
             env.update(PYTHONUTF8='1',PYTHONIOENCODING='utf-8',PYTHONNOUSERSITE='1')
-            atomic_json(self.root/'runtime/state/workstation-comfy.json',dict(launch_in_progress=True,
+            if item.get('key')=='fasth3-omni': return self._start_omni(item,env,logs)
+            atomic_json(self.receipt_path(item),dict(launch_in_progress=True,
                         configuration_sha256=self.launch_digest(item)))
-            with (logs/'workstation-comfy.log').open('ab',buffering=0) as output:
+            log='workstation-fasth3-omni.log' if item.get('key')=='fasth3-omni' else 'workstation-comfy.log'
+            with (logs/log).open('ab',buffering=0) as output:
                 child=subprocess.Popen([item['executable']]+item['argv'],cwd=item['cwd'],env=env,
                     shell=False,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,
                     creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
@@ -305,9 +413,9 @@ class Workstation:
             self.child=child
             try: record=process_record(child.pid)
             except Exception as exc: raise WorkstationError('Started process identity unavailable; inspect local log, do not retry blindly') from exc
-            atomic_json(self.root/'runtime/state/workstation-comfy.json',dict(process=record,
+            atomic_json(self.receipt_path(item),dict(process=record,root=str(self.root),profile=item.get('key'),
                         configuration_sha256=self.launch_digest(item),started_at=time.time()))
-            return dict(state='starting',reused=False,log='runtime/logs/workstation-comfy.log')
+            return dict(state='starting',reused=False,log='runtime/logs/'+log)
 
 
 class WorkstationCapabilities(BaseModel):
@@ -393,6 +501,16 @@ def select_root_api(body:SelectionRequest,w:Workstation=Depends(workstation)):
 @router.post('/comfy/start',summary='Start only fixed approved Comfy command; preserve existing listeners')
 def start_api(body:ActionRequest=Body(default=ActionRequest()),w:Workstation=Depends(workstation)):
     return invoke(w.start)
+
+@router.get('/profiles/{profile}/status',response_model=WorkstationStatus,summary='Read optional engine state; never install, download or start')
+def profile_status_api(profile:Literal['fasth3-omni'],w:Workstation=Depends(workstation)):
+    return invoke(w.status,profile)
+
+
+@router.post('/profiles/{profile}/start',summary='Explicitly start an already installed isolated optional runtime')
+def profile_start_api(profile:Literal['fasth3-omni'],body:ActionRequest=Body(default=ActionRequest()),w:Workstation=Depends(workstation)):
+    return invoke(w.start,profile)
+
 
 @router.post('/comfy/open',summary='Request server-desktop browser for selected verified loopback Comfy')
 def open_api(body:ActionRequest=Body(default=ActionRequest()),w:Workstation=Depends(workstation)):

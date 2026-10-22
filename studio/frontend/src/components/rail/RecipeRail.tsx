@@ -12,6 +12,7 @@ import { ConfirmDialog } from '../ui/alert-dialog'
 import { InfoTip } from '../ui/info-tip'
 import { Switch } from '../ui/switch'
 import { useToast } from '../ui/toast'
+import { OmniSetup } from '../composer/OmniSetup'
 
 interface RecipeCardProps {
   preset: Preset
@@ -24,7 +25,8 @@ interface RecipeCardProps {
 function RecipeCard({ preset, tier, active, comfyOnline, onApply }: RecipeCardProps) {
   const [open, setOpen] = useState(false)
   // Offline, availability is unknown rather than denied: loading a recipe is harmless.
-  const blocked = comfyOnline && !preset.available
+  const omni = preset.patch.method === 'fast_h3_omni_8step'
+  const blocked = (omni || comfyOnline) && !preset.available
   const detailsId = `recipe-details-${preset.id}`
 
   return (
@@ -96,6 +98,7 @@ function RecipeCard({ preset, tier, active, comfyOnline, onApply }: RecipeCardPr
         </button>
       </div>
 
+      {omni && blocked ? <div className="px-3 pb-3"><OmniSetup /></div> : null}
       {open ? (
         <div id={detailsId} className="space-y-2 border-t border-white/[0.05] px-3 py-2.5">
           {preset.needs.length > 0 ? (

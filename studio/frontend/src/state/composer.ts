@@ -164,7 +164,59 @@ export const createComposerState = (): ComposerState => ({
   references: [],
 })
 
+const OMNI = 'fast_h3_omni_8step'
+const OMNI_PRESET = 'fasth3-omni-scenes'
+
+/** Shared core for selection, preset application, reuse and serialization. */
+function omniCore() {
+  return {
+    mode: 'ref2va' as const, steps: 8, sampler_name: 'euler', scheduler: 'simple', custom_sigmas: null,
+    weights: 'int8' as const, encoder: 'standard' as const, lora_chain: [],
+    continuity: { auto_split: false, window: 'auto' as const, pin_frames: '22' as const },
+  }
+}
+
+function omniReferences(references: ReferenceSlot[]): ReferenceSlot[] {
+  return migrateReferences('ref2va', references.filter((slot) => slot.role !== 'aligned_guide')).slots
+}
+
+/** Only automatic Omni sizing is capped; manual canvases stay explicit. */
+function omniAspectCanvas(width: number, height: number, ratio: number) {
+  const idealWidth = Math.sqrt(width * height * ratio)
+  const idealHeight = Math.sqrt(width * height / ratio)
+  const atScale = (scale: number) => ({
+    width: snapDimension(idealWidth * scale),
+    height: snapDimension(idealHeight * scale),
+  })
+  let canvas = atScale(1)
+  if (canvas.width * canvas.height <= 832 * 480) return canvas
+
+  // Uniformly shrink before rounding: retain the reference aspect rather than
+  // shaving only one axis. Snapping remains monotonic, including min/max caps.
+  let low = 0
+  let high = 1
+  canvas = atScale(low)
+  for (let i = 0; i < 32; i += 1) {
+    const scale = (low + high) / 2
+    const candidate = atScale(scale)
+    if (candidate.width * candidate.height <= 832 * 480) {
+      low = scale
+      canvas = candidate
+    } else {
+      high = scale
+    }
+  }
+  return canvas
+}
+
+function sceneCanvas(width: number, height: number, references: ReferenceSlot[]) {
+  const image = references.find((slot) => slot.asset.kind === 'image')?.asset
+  if (!image?.width || !image?.height) return { width, height }
+  return omniAspectCanvas(width, height, image.width / image.height)
+}
+
 export const useComposer = create<ComposerStore>((set, get) => ({
+  // Omni always remains a separate scene lane, never a swap adapter.
   ...createComposerState(),
 
   setMode: (mode) =>
@@ -177,8 +229,10 @@ export const useComposer = create<ComposerStore>((set, get) => ({
       const removedLoras = changesCheckpointFamily ? state.lora_chain.length : 0
       return {
         mode,
+        ...(state.method === OMNI && mode !== 'ref2va' ? { presetId: null } : {}),
         references: slots,
         method:
+          state.method === OMNI && mode !== 'ref2va' ? 'baseline' :
           (mode === 'ref2va' || mode === 'performance') &&
           (state.method === 'w4a8_lightx2v' ||
             state.method === 'w4a8_lightx2v_trt' ||
@@ -209,16 +263,25 @@ export const useComposer = create<ComposerStore>((set, get) => ({
 
   setFrameSize: (width, height) => set({ width: snapDimension(width), height: snapDimension(height) }),
   setLength: (length) => set({ length: snapLength(length) }),
-  setSteps: (steps) => set({ steps: Math.max(1, Math.min(100, Math.round(steps))) }),
+  setSteps: (steps) => set({ steps: get().method === OMNI ? 8 : Math.max(1, Math.min(100, Math.round(steps))) }),
 
   setSeed: (seed) => set({ seed }),
   randomizeSeed: () => set({ seed: randomSeed() }),
 
-  setSampler: (sampler_name) => set({ sampler_name }),
-  setScheduler: (scheduler) => set({ scheduler }),
+  setSampler: (sampler_name) => set({ sampler_name: get().method === OMNI ? 'euler' : sampler_name }),
+  setScheduler: (scheduler) => set({ scheduler: get().method === OMNI ? 'simple' : scheduler }),
   setMethod: (method) =>
-    set(
-      method === 'ref2va_vsa'
+    set((state) => ({
+      ...(state.method === OMNI || method === OMNI ? { presetId: null } : {}),
+      ...(method === OMNI
+        ? {
+            ...omniCore(), method, seed: 0, length: 124, ref_image_size: 'max' as const, auto_ratio: true,
+            ...sceneCanvas(512, 640, state.references),
+            references: omniReferences(state.references),
+            prompt: state.prompt.trimStart().startsWith('body_swap:') ? '' : state.prompt,
+            notice: 'Escenas Omni: sin LoRAs ni guía alineada. Se retiraron ajustes incompatibles; revisa referencias y prompt.',
+          }
+        : method === 'ref2va_vsa'
         ? {
             method,
             steps: 4,
@@ -234,18 +297,18 @@ export const useComposer = create<ComposerStore>((set, get) => ({
             weights: 'int8',
             ...(method === 'w4a8_latent2x_refine3' ? { length: 124 } : {}),
           }
-        : { method },
-    ),
+        : { method }),
+    })),
 
   setEasyCache: (patch) => set((state) => ({ easycache: { ...state.easycache, ...patch } })),
   setSol: (patch) => set((state) => ({ sol: { ...state.sol, ...patch } })),
-  setContinuity: (patch) => set((state) => ({ continuity: { ...state.continuity, ...patch } })),
+  setContinuity: (patch) => set((state) => ({ continuity: { ...state.continuity, ...patch, ...(state.method === OMNI ? { auto_split: false } : {}) } })),
 
-  setWeights: (weights) => set({ weights }),
-  setEncoder: (encoder) => set({ encoder }),
+  setWeights: (weights) => set({ weights: get().method === OMNI ? 'int8' : weights }),
+  setEncoder: (encoder) => set({ encoder: get().method === OMNI ? 'standard' : encoder }),
   addLora: (name, strength) =>
     set((state) =>
-      state.lora_chain.length >= 8 || state.lora_chain.some((lora) => lora.name === name)
+      state.method === OMNI || state.lora_chain.length >= 8 || state.lora_chain.some((lora) => lora.name === name)
         ? state
         : { lora_chain: [...state.lora_chain, { name, strength }] },
     ),
@@ -279,14 +342,17 @@ export const useComposer = create<ComposerStore>((set, get) => ({
       !state.references.some((slot) => slot.asset.kind === 'image')
     const targetArea = state.width * state.height
     const ratio = shouldMatchRatio ? asset.width! / asset.height! : 0
-    const width = shouldMatchRatio ? snapDimension(Math.sqrt(targetArea * ratio)) : state.width
-    const height = shouldMatchRatio ? snapDimension(Math.sqrt(targetArea / ratio)) : state.height
+    const canvas = shouldMatchRatio && state.method === OMNI
+      ? omniAspectCanvas(state.width, state.height, ratio)
+      : {
+          width: shouldMatchRatio ? snapDimension(Math.sqrt(targetArea * ratio)) : state.width,
+          height: shouldMatchRatio ? snapDimension(Math.sqrt(targetArea / ratio)) : state.height,
+        }
     set({
-      width,
-      height,
+      ...canvas,
       references: [
         ...state.references,
-        { uid: nextUid(), asset, role: ['character-swap-v11', 'character-swap-hd-turbo8'].includes(state.presetId ?? '') && asset.kind === 'video' && !state.references.some((slot) => slot.role === 'aligned_guide') ? 'aligned_guide' : decision.role, include_audio: false },
+        { uid: nextUid(), asset, role: state.method !== OMNI && ['character-swap-v11', 'character-swap-hd-turbo8'].includes(state.presetId ?? '') && asset.kind === 'video' && !state.references.some((slot) => slot.role === 'aligned_guide') ? 'aligned_guide' : decision.role, include_audio: false },
       ],
       notice: null,
     })
@@ -300,6 +366,7 @@ export const useComposer = create<ComposerStore>((set, get) => ({
     set((state) => ({
       references: state.references.map((slot) => {
         if (slot.uid !== uid) return slot
+        if (state.method === OMNI && role === 'aligned_guide') return slot
         if (!rolesFor(state.mode, slot.asset.kind).includes(role)) return slot
         // First/last frame are positional: only one slot may hold each.
         return { ...slot, role, include_audio: role === 'aligned_guide' ? false : slot.include_audio }
@@ -320,7 +387,9 @@ export const useComposer = create<ComposerStore>((set, get) => ({
   applyPreset: (preset) =>
     set((state) => {
       const patch = preset.patch
-      const mode = preset.suggests_mode ?? state.mode
+      const method = preset.patch.method ?? (state.method === OMNI ? 'baseline' : state.method)
+      const omni = method === OMNI
+      const mode = omni ? 'ref2va' : preset.suggests_mode ?? state.mode
       const { slots, dropped } = migrateReferences(mode, state.references)
       return {
         mode,
@@ -346,7 +415,7 @@ export const useComposer = create<ComposerStore>((set, get) => ({
         height: patch.height,
         length: patch.length,
         steps: patch.steps,
-        method: patch.method ?? state.method,
+        method,
         sampler_name: patch.sampler_name ?? state.sampler_name,
         scheduler: patch.scheduler ?? state.scheduler,
         custom_sigmas: patch.custom_sigmas ?? null,
@@ -362,8 +431,17 @@ export const useComposer = create<ComposerStore>((set, get) => ({
         encoder: patch.encoder ?? state.encoder,
         lora_chain: patch.lora_chain ? patch.lora_chain.map((lora) => ({ ...lora })) : state.lora_chain,
         presetId: preset.id,
+        ...(patch.seed !== undefined ? { seed: patch.seed } : {}),
+        ...(omni ? {
+          ...omniCore(), seed: patch.seed ?? 0, ref_image_size: patch.ref_image_size ?? 'max', auto_ratio: true,
+          references: omniReferences(slots),
+          ...sceneCanvas(patch.width, patch.height, slots),
+          prompt: patch.prompt ?? (state.prompt.trimStart().startsWith('body_swap:') ? '' : state.prompt),
+        } : {}),
         notice:
-          dropped.length > 0
+          omni && state.references.some((slot) => slot.role === 'aligned_guide')
+            ? 'Se quitó la guía alineada: Escenas Omni no usa el contrato Character Swap.'
+            : dropped.length > 0
             ? `${dropped.length === 1 ? 'Se quitó 1 referencia' : `Se quitaron ${dropped.length} referencias`}: esta tarea no la${dropped.length > 1 ? 's' : ''} admite.`
             : null,
       }
@@ -409,6 +487,7 @@ export const useComposer = create<ComposerStore>((set, get) => ({
       ref_image_size: request.ref_image_size,
       references,
       presetId: request.preset_id,
+      ...(request.method === OMNI ? { ...omniCore(), auto_ratio: true, references: omniReferences(references), presetId: request.preset_id === OMNI_PRESET ? OMNI_PRESET : null } : {}),
       notice:
         missing > 0
           ? `${missing === 1 ? '1 referencia ya no está' : `${missing} referencias ya no están`} en la biblioteca y no se pudo restaurar.`
@@ -427,6 +506,7 @@ export type ComposerSnapshot = Omit<ComposerState, 'notice' | 'auto_ratio'>
 
 /** Project the composer onto the wire contract the backend validates. */
 export function toGenerationRequest(state: ComposerSnapshot): GenerationRequest {
+  const omni = state.method === OMNI
   return {
     mode: state.mode,
     prompt: state.prompt,
@@ -449,5 +529,6 @@ export function toGenerationRequest(state: ComposerSnapshot): GenerationRequest 
     references: toReferenceInputs(state.references),
     title: state.title.trim() ? state.title.trim() : null,
     preset_id: state.presetId,
+    ...(omni ? { ...omniCore(), references: toReferenceInputs(omniReferences(state.references)), preset_id: state.presetId === OMNI_PRESET ? OMNI_PRESET : null } : {}),
   }
 }

@@ -228,6 +228,7 @@ export function makeConfig(overrides: Partial<StudioConfig> = {}): StudioConfig 
       ref2va_vsa: { measured_seconds: 94.299, measured_ssim: null, caveat: 'References mode only.' },
       sage: { measured_seconds: 76.06, measured_ssim: 0.861, caveat: 'Experimental.' },
       sol: { measured_seconds: 82.99, measured_ssim: 0.778, caveat: 'Experimental.' },
+      fast_h3_omni_8step: { measured_seconds: null, measured_ssim: null, caveat: '86–123 s warm examples, not a guarantee.' },
       fast_h3_v2_8step: { measured_seconds: null, measured_ssim: null, caveat: 'Unvalidated.' },
       taomate_3step: { measured_seconds: null, measured_ssim: null, caveat: 'Unvalidated.' },
     },

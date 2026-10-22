@@ -12,7 +12,7 @@ Instala y verifica la receta local Character Swap HD Turbo8 de este repositorio 
 
 1. Lee `README.md`, `THIRD_PARTY_NOTICES.md`, `docs/INSTALLATION-TECHNICAL.md`, `dependencies/`, `models/manifest.json` y los SKILL.md de `skills/`.
 2. Inspecciona sistema, driver, nvidia-smi, RAM, disco, Python/Git/Node/uv/ffmpeg y puertos8218/8220. Descubre herramientas antes de instalar. No uses el username como hostname.
-3. Conserva la carpeta completa: los dos LoRA están físicamente incluidos; no descargues modelos base duplicados si ya existen y su SHA256 coincide. No modifiques instalaciones ajenas, otros perfiles de agentes, drivers o servicios sin aprobación.
+3. Conserva la carpeta completa: este repositorio no incluye pesos, ni siquiera los LoRA. Reutiliza archivos existentes en raíces autorizadas solo tras comprobar tamaño y SHA256; descarga únicamente los requeridos que falten. No modifiques instalaciones ajenas, otros perfiles de agentes, drivers o servicios sin aprobación.
 4. Usa los scripts de este repo; léelos antes de ejecutarlos. No sustituyas versiones fijadas por latest ni instales paquetes GPU al azar. Si un requisito falla, informa del error real y corrige dentro del entorno aislado. No simules salidas.
 5. Verifica el alcance de las licencias. No expongas el servicio como API pública/SaaS, no crees túneles externos ni agregues secretos al repo. El uso de la interfaz local como herramienta interna no equivale a autorizar una plataforma para terceros.
 
@@ -20,12 +20,16 @@ Instala y verifica la receta local Character Swap HD Turbo8 de este repositorio 
 
 1. Ejecuta las pruebas de paquete y la verificación offline disponible. Los scripts PowerShell deben pasar el parser antes de ejecutarse. El README técnico describe los switches reales; no inventes parámetros.
 2. Ejecuta `scripts/Install-Kinjutsu.ps1` desde PowerShell. Usa instalación aislada y versiones de `dependencies/`. Instalación/download no equivalen a render.
-3. Los modelos externos requeridos son SOLO los cuatro `included=false` de `models/manifest.json`: Ref2VA pruned INT8ConvRot, Qwen3VL32BNVFP4AWQ, videoVAEfp16 y audioVAEfp32. Descarga desde las revisiones fijadas, de forma reanudable a.part, comprueba tamaño y SHA256 antes de renombrar. Los2LoRA `included=true` se mantienen en el árbol central y se mapean al motor, sin copia.
+3. Para Character Swap, los seis artefactos base (cuatro componentes y dos LoRA) están fijados como `included=false` en `models/manifest.json`; reutilizarlos verificados o descargarlos reanudablemente a `.part`. El checkpoint FastH3 Omni es opcional y no pertenece a esa instalación base: se elige aparte y comparte encoder/VAEs verificados. Comprobar tamaño y SHA256 antes de renombrar; no asumir pesos incluidos.
 4. Instala el core ComfyUI fijado y aplica los backports de `runtime/`. **Registrar un nodo AddGuide no basta:** el core debe soportar las filas temporales completas y concatenación de guía/referencias. Verifica la aplicabilidad y tests; no reemplaces por referencia de video normal.
 5. Instala backend y frontend del Studio limpio. Compila frontend o verifica el build distribuido. No copies .env/historial ni rutas de otra computadora.
 6. Arranca con `scripts/Start-Kinjutsu.ps1`. Escucha solo127.0.0.1: Comfy8218 y Studio8220. Guarda logs/PIDs propios; sin autoarranque.
 7. Verifica `/api/health`, `/api/capabilities?refresh=true`, catálogos `/object_info` y `/api/openapi.json`. Requiere `aligned_guides=true` y MiniMaxH3AddGuide. Comprueba que los catálogos vean exactamente todos los archivos del manifiesto.
 8. Ejecuta `scripts/Verify-Kinjutsu.ps1` y las pruebas del repo. No des por completada la instalación si el backend está offline o el frontend es un build distinto al código limpio.
+
+## Escenas con Omni (opcional)
+
+Para crear escenas nuevas con referencias, usar la segunda receta `FastH3 Omni · Escenas`, no los adaptadores de Character Swap. Leer `docs/FASTH3-OMNI.md` y `skills/kinjutsu-omni-scenes/SKILL.md`. Instalar explícitamente el checkpoint opcional y el motor Omni independiente en8237; no actualizar el core ni el Python del motor Character Swap. El método API es `fast_h3_omni_8step`, con8pasos Euler/simple, shifts12/3, sin LoRAs. Un método disponible en UI requiere salud/capacidades/pesos reales, no solo un selector. No iniciar inferencia ni descargar22GB porque se abrió este documento.
 
 ## Primera ejecución real
 

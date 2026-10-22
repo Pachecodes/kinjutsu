@@ -59,6 +59,18 @@
       "url": "https://huggingface.co/Alissonerdx/Minimax-H3-ComfyUI/resolve/37d7d8b302ec4168ff30467c900c588db253cad9/loras/minimax_h3_character_swap_v1.1_ref2va_fro.safetensors",
       "target": "loras/minimax_h3_character_swap_v1.1_ref2va_fro.safetensors",
       "included": false
+    },
+    {
+      "repo": "FastVideo/FastH3-Omni-Comfy",
+      "path": "diffusion_models/fasth3_omniref_8step_pruned_int8_convrot.safetensors",
+      "revision": "82eff2a6eee6c962846879f4bab52610a4df24d3",
+      "size": 22213723064,
+      "sha256": "851b2dc9670ed864b7f1e951ac9da047d83b1c04ded9bfcc1a9e5bba0ee33f80",
+      "url": "https://huggingface.co/FastVideo/FastH3-Omni-Comfy/resolve/82eff2a6eee6c962846879f4bab52610a4df24d3/diffusion_models/fasth3_omniref_8step_pruned_int8_convrot.safetensors",
+      "target": "diffusion_models/fasth3_omniref_8step_pruned_int8_convrot.safetensors",
+      "included": false,
+      "optional": true,
+      "profile": "fasth3-omni"
     }
   ],
   "title": "Pachecodes : Kinjutsu",

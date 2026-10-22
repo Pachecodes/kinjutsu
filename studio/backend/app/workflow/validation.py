@@ -77,9 +77,18 @@ def normalize_request(request: GenerationRequest) -> tuple[GenerationRequest, li
     issues: list[Issue] = []
     updates: dict[str, object] = {}
 
-    width = snap_dimension(request.width, step=DIMENSION_STEP, minimum=DIMENSION_MIN, maximum=DIMENSION_MAX)
-    height = snap_dimension(request.height, step=DIMENSION_STEP, minimum=DIMENSION_MIN, maximum=DIMENSION_MAX)
-    if width != request.width or height != request.height:
+    if request.method is MethodId.fast_h3_omni_8step:
+        # Defaults may be inherited from the normal composer; explicit recipe edits
+        # are rejected below, never silently translated to a different method.
+        for name, value in {"steps": 8, "sampler_name": "euler", "scheduler": "simple", "ref_image_size": "max", "width": 512, "height": 640}.items():
+            if name not in request.model_fields_set:
+                updates[name] = value
+
+    # Snap the effective canvas after method-specific defaults have been resolved.
+    effective = request.model_copy(update=updates) if updates else request
+    width = snap_dimension(effective.width, step=DIMENSION_STEP, minimum=DIMENSION_MIN, maximum=DIMENSION_MAX)
+    height = snap_dimension(effective.height, step=DIMENSION_STEP, minimum=DIMENSION_MIN, maximum=DIMENSION_MAX)
+    if width != effective.width or height != effective.height:
         issues.append(
             _warn(
                 "dimensions_snapped",
@@ -663,6 +672,29 @@ def _validate_ref_image_size(request: GenerationRequest) -> list[Issue]:
     return []
 
 
+def validate_omni(request: GenerationRequest) -> list[Issue]:
+    """Fail closed on recipe mixing and unmeasured long/large scene jobs."""
+    if request.method is not MethodId.fast_h3_omni_8step:
+        return []
+    issues: list[Issue] = []
+    checks = [
+        (request.mode is not Mode.ref2va, "mode", "Omni solo admite References (Ref2VA), no Text, frames ni Performance."),
+        (request.weights is not WeightVariant.int8 or request.encoder is not EncoderVariant.standard, "weights", "Omni requiere su checkpoint INT8 oficial y encoder Standard."),
+        (request.steps != 8 or request.sampler_name != "euler" or request.scheduler != "simple" or request.custom_sigmas is not None, "recipe", "Omni requiere Euler / simple, 8 pasos, BasicGuider 1 y sigma shift 12/3; sin sigmas manuales."),
+        (bool(request.lora_chain), "loras", "Omni es model-only: no admite LoRAs ni mezcla Character Swap."),
+        (request.continuity.auto_split, "continuity", "Omni no admite continuidad automática ni división de tomas."),
+        (request.length > 124, "length", "Omni está limitado a clips cortos de hasta 124 frames; no se ha medido una toma larga."),
+        (request.width * request.height > 832 * 480, "dimensions", "Límite conservador Omni: 399360 píxeles (832×480), el mayor lienzo medido; resoluciones mayores requieren validación independiente."),
+        (any(r.role is RefRole.aligned_guide for r in request.references), "guide", "Omni usa referencias normales; no admite Aligned guide ni transferencia alineada."),
+        (not any(r.kind in {RefKind.image, RefKind.video} for r in request.references), "visual", "Omni requiere al menos una referencia de imagen o video."),
+    ]
+    for failed, code, message in checks:
+        if failed:
+            issues.append(_err(f"omni_{code}", message, "method"))
+    issues.append(_warn("omni_measured_scope", "Solo se midió una referencia de imagen y un clip corto. Video/audio y referencias múltiples son compatibles con el nodo nativo, pero no tienen benchmark de calidad o tiempo; no se garantizan dos minutos.", "method"))
+    return issues
+
+
 def validate_request(
     request: GenerationRequest,
     assets: Mapping[str, ResolvedAsset],
@@ -674,6 +706,7 @@ def validate_request(
     """Return the normalized request plus every issue we can detect offline."""
     normalized, issues = normalize_request(request)
 
+    issues.extend(validate_omni(normalized))
     asset_issues, _ = _validate_assets(normalized, assets)
     issues.extend(asset_issues)
     issues.extend(validate_aligned_guides(normalized, assets, available=aligned_guides_available))

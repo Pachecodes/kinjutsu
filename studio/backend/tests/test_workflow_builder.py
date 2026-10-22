@@ -259,8 +259,8 @@ def _contract_inputs(class_type: str) -> set[str]:
 @pytest.mark.parametrize("name", sorted(_all_requests()))
 @pytest.mark.parametrize("method", list(MethodId))
 def test_every_node_and_input_exists_in_the_live_contract(name: str, method: MethodId) -> None:
-    if method in {MethodId.fast_h3_v2_8step, MethodId.taomate_3step}:
-        pytest.skip("Isolated ComfyUI 0.36 profiles have dedicated exact-recipe and live-contract tests")
+    if method in {MethodId.fast_h3_v2_8step, MethodId.taomate_3step, MethodId.fast_h3_omni_8step}:
+        pytest.skip("Isolated profiles have dedicated exact-recipe and native-contract tests")
     if method in {MethodId.w4a8_lightx2v, MethodId.w4a8_lightx2v_trt, MethodId.w4a8_latent2x_refine3} and name in {
         "ref2va",
         "performance",

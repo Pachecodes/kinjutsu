@@ -20,6 +20,7 @@ import { useComposer } from '../../state/composer'
 import { useUi } from '../../state/ui'
 import { LibraryDialog } from '../references/LibraryDialog'
 import { InfoTip } from '../ui/info-tip'
+import { OmniNotes } from './OmniSetup'
 
 function Thumb({ slot }: { slot: ReferenceSlot }) {
   const { asset } = slot
@@ -122,6 +123,7 @@ function EmptyTile({
 export function ReferenceTray() {
   const mode = useComposer((state) => state.mode)
   const presetId = useComposer((state) => state.presetId)
+  const omni = useComposer((state) => state.method === 'fast_h3_omni_8step')
   const references = useComposer((state) => state.references)
   const { ingest, progress, uploading } = useReferenceIngest()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -267,6 +269,7 @@ export function ReferenceTray() {
           ) : null}
         </p>
       ) : null}
+      {omni ? <div className="mt-2"><OmniNotes /></div> : null}
       {dropActive ? (
         <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl">
           <span className="flex items-center gap-2 rounded-full border border-accent/30 bg-ink-950/90 px-3 py-1.5 text-[11px] font-bold text-accent">

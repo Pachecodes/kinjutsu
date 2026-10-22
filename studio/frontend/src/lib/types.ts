@@ -18,6 +18,7 @@ export type MethodId =
   | 'sage'
   | 'sol'
   | 'fast_h3_v2_8step'
+  | 'fast_h3_omni_8step'
   | 'taomate_3step'
 
 export type WeightVariant = 'int8' | 'gguf_q3km' | 'pinkcherry_v03' | 'erosmax_beta4' | 'erosmax_beta5'

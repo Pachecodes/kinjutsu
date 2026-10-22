@@ -9,6 +9,7 @@ marked unavailable - so the workspace can explain itself instead of hanging.
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -78,6 +79,7 @@ def build_capabilities(
     comfy_online: bool,
     source: str,
     error: str | None = None,
+    omni_native: bool = False,
 ) -> CapabilityResponse:
     nodes = set(info)
     unet_options = set(_combo_options(info, C.NODE_UNET_LOADER, "unet_name"))
@@ -165,6 +167,8 @@ def build_capabilities(
     for profile in C.METHOD_PROFILES.values():
         missing_nodes = [node for node in profile["requires_nodes"] if node not in nodes]
         reason = base_reason
+        if profile.get("backend") == "omni" and not omni_native:
+            reason = "Omni requiere sondeo de su backend independiente y soporte PDD nativo."
         if reason is None and missing_nodes:
             reason = f"{missing_nodes[0]} is not installed on this Comfy instance."
         if reason is None:
@@ -287,6 +291,40 @@ def build_capabilities(
     )
 
 
+def _omni_signature_reason(info: dict[str, Any]) -> str | None:
+    """The legacy backport has similar nodes, but cannot load native PDD heads."""
+    shift = info.get(C.NODE_H3_SIGMA_SHIFT, {})
+    if shift.get("python_module") != "comfy_extras.nodes_minimax_h3":
+        return "Omni requiere MiniMaxH3SigmaShift nativo de ComfyUI con soporte PDD."
+    signatures = {
+        C.NODE_H3_SIGMA_SHIFT: {"model": "MODEL", "shift_video": "FLOAT", "shift_audio": "FLOAT"},
+        C.NODE_REFERENCE_TO_VIDEO: {"clip":"CLIP", "vae":"VAE", "audio_vae":"VAE", "prompt":"STRING", "width":"INT", "height":"INT", "length":"INT"},
+        C.NODE_BASIC_GUIDER: {"model":"MODEL", "conditioning":"CONDITIONING"},
+        C.NODE_BASIC_SCHEDULER: {"model":"MODEL", "steps":"INT", "denoise":"FLOAT"},
+        C.NODE_SAMPLER_CUSTOM_ADVANCED: {"noise":"NOISE", "guider":"GUIDER", "sampler":"SAMPLER", "sigmas":"SIGMAS", "latent_image":"LATENT"},
+    }
+    for node, signature in signatures.items():
+        schema = info.get(node, {}).get("input", {})
+        inputs = {**schema.get("required", {}), **schema.get("optional", {})}
+        for name, kind in signature.items():
+            entry = inputs.get(name)
+            if not isinstance(entry, (list, tuple)) or not entry or entry[0] != kind:
+                return f"Firma nativa Omni incompatible: {node}.{name} requiere {kind}."
+    if not {"match", "max"}.issubset(_combo_options(info, C.NODE_REFERENCE_TO_VIDEO, "ref_image_size")):
+        return "Firma Omni incompatible: ref_image_size match/max no disponible."
+    schema = info.get(C.NODE_REFERENCE_TO_VIDEO, {}).get("input", {})
+    inputs = {**schema.get("required", {}), **schema.get("optional", {})}
+    for name, stem, kind in [("ref_images", "ref_image", "IMAGE"), ("ref_videos", "ref_video", "IMAGE"), ("ref_video_audios", "ref_video_audio", "AUDIO"), ("ref_audios", "ref_audio", "AUDIO")]:
+        entry = inputs.get(name)
+        if not isinstance(entry, list) or len(entry) < 2 or entry[0] != "COMFY_AUTOGROW_V3":
+            return f"Firma Omni incompatible: {name} requiere autogrow nativo."
+        template = entry[1].get("template", {})
+        spec = template.get("input", {}).get("required", {}).get(stem, [])
+        if template.get("prefix") != stem + "_" or not spec or spec[0] != kind:
+            return f"Firma Omni incompatible: {name} tiene un prefijo/tipo inesperado."
+    return None
+
+
 class CapabilityService:
     """Caches the capability probe for `ttl` seconds."""
 
@@ -298,11 +336,15 @@ class CapabilityService:
         ttl: float = 30.0,
         experimental_client: ComfyClientProtocol | None = None,
         experimental_comfy_url: str | None = None,
+        omni_client: ComfyClientProtocol | None = None,
+        omni_comfy_url: str | None = None,
     ) -> None:
         self._client = client
         self._comfy_url = comfy_url
         self._experimental_client = experimental_client
         self._experimental_comfy_url = experimental_comfy_url
+        self._omni_client = omni_client
+        self._omni_comfy_url = omni_comfy_url
         self._ttl = ttl
         self._cached: CapabilityResponse | None = None
         self._cached_at = 0.0
@@ -351,6 +393,29 @@ class CapabilityService:
                 for method in result.methods
             ]
             result = result.model_copy(update={"methods": merged_methods})
+        # Never infer Omni support from the normal/experimental runtime.
+        omni_reason = "Backend Omni independiente no configurado."
+        if self._omni_client is self._client or self._omni_client is self._experimental_client:
+            omni_reason = "Omni requiere un cliente/backend independiente; no se reutiliza el runtime normal o experimental."
+        elif self._omni_comfy_url and self._omni_comfy_url.rstrip("/").lower() in {self._comfy_url.rstrip("/").lower(), (self._experimental_comfy_url or "").rstrip("/").lower()}:
+            omni_reason = "La URL Omni debe ser distinta del backend normal y experimental."
+        elif self._omni_client is not None and self._omni_comfy_url:
+            try:
+                omni_info = await self._omni_client.object_info()
+                stats = await self._omni_client.system_stats()
+                version = str(stats.get("system", {}).get("comfyui_version", ""))
+                match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", version)
+                if not match or tuple(map(int, match.groups())) < (0, 42, 0):
+                    omni_reason = "Omni requiere ComfyUI >=0.42.0 con soporte PDD nativo; versión ausente o antigua."
+                else:
+                    omni_caps = build_capabilities(omni_info, comfy_url=self._omni_comfy_url, comfy_online=True, source="live", omni_native=True)
+                    omni_method = next(m for m in omni_caps.methods if m.id == "fast_h3_omni_8step")
+                    omni_reason = omni_method.unavailable_reason
+                    if omni_reason is None:
+                        omni_reason = _omni_signature_reason(omni_info)
+            except (ComfyError, ValueError, AttributeError, TypeError) as exc:
+                omni_reason = f"Backend Omni no disponible: {exc}"
+        result = result.model_copy(update={"methods": [m.model_copy(update={"available": omni_reason is None, "unavailable_reason": omni_reason}) if m.id == "fast_h3_omni_8step" else m for m in result.methods]})
         self._cached = result
         self._cached_at = now
         return result

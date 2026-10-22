@@ -34,6 +34,7 @@ class Settings(BaseSettings):
 
     comfy_url: str = "http://127.0.0.1:8218"
     experimental_comfy_url: str = "http://127.0.0.1:8218"
+    omni_comfy_url: str = "http://127.0.0.1:8237"
     comfy_timeout_seconds: float = 30.0
     capability_ttl: float = 30.0
 
@@ -84,7 +85,7 @@ class Settings(BaseSettings):
             raise ValueError("Prompt Chat multimodal projector path cannot be empty")
         return value.strip()
 
-    @field_validator("comfy_url", "experimental_comfy_url")
+    @field_validator("comfy_url", "experimental_comfy_url", "omni_comfy_url")
     @classmethod
     def _guard_stable_comfy(cls, value: str) -> str:
         value = value.rstrip("/")
